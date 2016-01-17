@@ -30,4 +30,7 @@
 
 # Debug files
 *.dSYM/
-bin/
+/bin/release/nitwit_server
+/bin/debug/nitwit_client
+/bin/debug/nitwit_server
+/bin/release/nitwit_client
