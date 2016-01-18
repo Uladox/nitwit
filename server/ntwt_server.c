@@ -4,6 +4,7 @@
 #include <fcntl.h>
 
 #include "../shared/socket/ntwt_socket.h"
+#include "../shared/interpreter/ntwt_interpreter.h"
 
 /* void *stuff[] = { */
 /* 	[0] = NULL, */
@@ -85,14 +86,14 @@ void *echo_socket(void *input)
         }
 	free(*str);
 	free(str);
-	/* close(sock->sd); */
+	ntwt_connection_free(sock);
 	printf("bye!\n");
 	return NULL;
 }
 
 int main(int argc, char **args)
 {
-	/* struct practise *p; */
+	struct practise *p;
 	struct ntwt_connecter *find_socket;
 	struct ntwt_connection *connect_socket;
 	pthread_t user_thread;
@@ -101,13 +102,22 @@ int main(int argc, char **args)
         connect_socket = ntwt_connecter_accept(find_socket);
 	pthread_create(&user_thread, NULL, echo_socket, (void *) connect_socket);
 
-	/* sleep(3); */
+	sleep(3);
 	/* ntwt_connection_kill(connect_socket); */
+	/* uint_fast8_t code[] = { */
+	/* 	PRINT, */
+	/* 	HI, */
+	/* 	PRINT, */
+	/* 	END */
+	/* }; */
+	/* uint_fast8_t stack[100]; */
 
-	/* p = practise_new(yell, 0.05, 0.005, 0.007); */
-	/* run_practise(p); */
+	/* ntwt_interprete(code, stack); */
+
+	p = practise_new(yell, 0.05, 0.005, 0.007);
+	run_practise(p);
+
 	pthread_join(user_thread, NULL);
-	ntwt_connection_free(connect_socket);
 	ntwt_connecter_free(find_socket);
 	pthread_exit(NULL);
 	return 0;

@@ -65,8 +65,13 @@ int main(void)
 	*str = malloc(size);
 
 	sock = ntwt_connection_connect(path);
-	while(printf("> "), fgets(*str, 100, stdin), !feof(stdin)) {
-		message_size = strlen(*str) + 1;
+	while (!ntwt_connection_end_check(sock)) {
+	        printf("> ");
+		fgets(*str, 100, stdin);
+		if (feof(stdin))
+			break;
+		message_size = strlen(*str);
+		(*str)[message_size - 1] = '\0';
 		/* send(sock->sd, &message_size, sizeof(unsigned int), 0); */
 		ntwt_connection_send(sock, (char *) &message_size,
 				     sizeof(unsigned int));

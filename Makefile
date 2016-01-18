@@ -1,33 +1,33 @@
-debug: bin/debug/nitwit_server bin/debug/nitwit_client
+SRC_FILES = \
+	server/ntwt_server.c \
+	client/ntwt_client.c \
+	shared/socket/ntwt_socket.c \
+	shared/interpreter/ntwt_interpreter.c
 
-bin/debug/nitwit_server: bin/debug/ntwt_server.o bin/debug/ntwt_socket.o
-	gcc -g -o bin/debug/nitwit_server bin/debug/ntwt_server.o bin/debug/ntwt_socket.o -pthread
+DEBUG_PATH = bin/debug
+DEBUG_FILES = $(patsubst %,$(DEBUG_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
 
-bin/debug/ntwt_server.o: server/ntwt_server.c
-	gcc -g -c -Wall -Werror server/ntwt_server.c -o bin/debug/ntwt_server.o
+RELEASE_PATH = bin/release
+RELEASE_FILES = $(patsubst %,$(RELEASE_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
 
-bin/debug/nitwit_client: bin/debug/ntwt_client.o
-	gcc -g -o bin/debug/nitwit_client bin/debug/ntwt_client.o bin/debug/ntwt_socket.o
+debug: $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client
+release: $(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client
 
-bin/debug/ntwt_client.o: client/ntwt_client.c
-	gcc -g -c -Wall -Werror client/ntwt_client.c -o bin/debug/ntwt_client.o
+define make-execs
+$(DEBUG_PATH)/$(1): $(addprefix $(DEBUG_PATH)/,$(2))
+	gcc -g     -Wall -Werror $$^ -o $$@ $(3)
+$(RELEASE_PATH)/$(1): $(addprefix $(RELEASE_PATH)/,$(2))
+	gcc -Ofast -Wall -Werror $$^ -o $$@ $(3)
+endef
 
-bin/debug/ntwt_socket.o: shared/socket/ntwt_socket.c
-	gcc -g -c -Wall -Werror shared/socket/ntwt_socket.c -o bin/debug/ntwt_socket.o
+$(eval $(call make-execs,nitwit_server,ntwt_server.o ntwt_socket.o ntwt_interpreter.o,-pthread));
+$(eval $(call make-execs,nitwit_client,ntwt_client.o ntwt_socket.o,));
 
-release: bin/release/nitwit_server bin/release/nitwit_client
+define make-objs
+$(patsubst %.c, $(DEBUG_PATH)/%.o, $(notdir $(1))): $(1)
+	gcc -g     -c -Wall -Werror $$< -o $$@
+$(patsubst %.c, $(RELEASE_PATH)/%.o, $(notdir $(1))): $(1)
+	gcc -Ofast -c -Wall -Werror $$< -o $$@
+endef
 
-bin/release/nitwit_server: bin/release/ntwt_server.o bin/release/ntwt_socket.o
-	gcc -Ofast -o bin/release/nitwit_server bin/release/ntwt_server.o bin/release/ntwt_socket.o -pthread
-
-bin/release/ntwt_server.o: server/ntwt_server.c
-	gcc -Ofast -c -Wall -Werror server/ntwt_server.c -o bin/release/ntwt_server.o
-
-bin/release/nitwit_client: bin/release/ntwt_client.o
-	gcc -Ofast -o bin/release/nitwit_client bin/release/ntwt_client.o bin/release/ntwt_socket.o
-
-bin/release/ntwt_client.o: client/ntwt_client.c
-	gcc -Ofast -c -Wall -Werror client/ntwt_client.c -o bin/release/ntwt_client.o
-
-bin/release/ntwt_socket.o: shared/socket/ntwt_socket.c
-	gcc -Ofast -c -Wall -Werror shared/socket/ntwt_socket.c -o bin/release/ntwt_socket.o
+$(foreach src,$(SRC_FILES),$(eval $(call make-objs,$(src))));
