@@ -46,6 +46,7 @@ void *echo_socket(void *input)
 			/* write(sock->sd, &message_size, sizeof(unsigned int)); */
 			ntwt_connection_send(sock, *str,
 					     message_size);
+			ntwt_interprete((uint_fast8_t *) *str, NULL, NULL);
 		}
         }
 	free(*str);

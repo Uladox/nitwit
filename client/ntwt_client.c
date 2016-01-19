@@ -8,8 +8,38 @@
 #include <unistd.h>
 
 #include "../shared/socket/ntwt_socket.h"
+#include "../shared/interpreter/ntwt_interpreter.h"
 
 #define SOCK_PATH "echo_socket"
+
+void compile(char *input, char *output)
+{
+	for(; *input; ++input, ++output)
+	{
+		switch(*input) {
+		case 'r':
+			*output = READ;
+			break;
+		case 'e':
+			*output = END;
+			break;
+		case 'c':
+			*output = CONTEXT;
+			break;
+		case 'u':
+			*output = RUN;
+			break;
+		case 't':
+			*output = TEST;
+			break;
+		case '\n':
+			printf("oh no!\n");
+			break;
+		default:
+			break;
+		}
+	}
+}
 
 int main(void)
 {
@@ -31,6 +61,7 @@ int main(void)
 			break;
 		message_size = strlen(*str);
 		(*str)[message_size - 1] = '\0';
+		compile(*str, *str);
 		/* send(sock->sd, &message_size, sizeof(unsigned int), 0); */
 		ntwt_connection_send(sock, (char *) &message_size,
 				     sizeof(unsigned int));

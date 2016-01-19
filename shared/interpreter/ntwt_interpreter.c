@@ -18,7 +18,8 @@ void ntwt_interprete(const uint_fast8_t code[], uint_fast8_t stack[],
 		[READ]    = &&s_read,
 		[END]     = &&s_end,
 		[CONTEXT] = &&s_context,
-		[RUN]     = &&s_run
+		[RUN]     = &&s_run,
+		[TEST]    = &&s_test
 	};
 
 	goto *dtable[*exec_ptr];
@@ -37,6 +38,9 @@ void ntwt_interprete(const uint_fast8_t code[], uint_fast8_t stack[],
 	STATE(run) {
 		ntwt_practise_run(context);
 		NEXTSTATE();
+	}
+	STATE(test) {
+		printf("this is a test\n");
 	}
 }
 
