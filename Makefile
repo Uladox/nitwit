@@ -2,7 +2,8 @@ SRC_FILES = \
 	server/ntwt_server.c \
 	client/ntwt_client.c \
 	shared/socket/ntwt_socket.c \
-	shared/interpreter/ntwt_interpreter.c
+	shared/interpreter/ntwt_interpreter.c \
+	shared/practise/ntwt_practise.c
 
 DEBUG_PATH = bin/debug
 DEBUG_FILES = $(patsubst %,$(DEBUG_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
@@ -20,7 +21,13 @@ $(RELEASE_PATH)/$(1): $(addprefix $(RELEASE_PATH)/,$(2))
 	gcc -Ofast -Wall -Werror $$^ -o $$@ $(3)
 endef
 
-$(eval $(call make-execs,nitwit_server,ntwt_server.o ntwt_socket.o ntwt_interpreter.o,-pthread));
+SERVER_FILES = \
+	ntwt_server.o \
+	ntwt_socket.o \
+	ntwt_interpreter.o \
+	ntwt_practise.o
+
+$(eval $(call make-execs,nitwit_server,$(SERVER_FILES),-pthread));
 $(eval $(call make-execs,nitwit_client,ntwt_client.o ntwt_socket.o,));
 
 define make-objs

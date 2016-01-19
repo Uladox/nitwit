@@ -6,20 +6,22 @@
 #define GOTOSTATE(x)  goto s_##x
 #define NEXTSTATE()  do { ++exec_ptr; goto *dtable[*exec_ptr]; } while(0)
 
-void ntwt_interprete(const uint_fast8_t code[], uint_fast8_t stack[])
+void ntwt_interprete(const uint_fast8_t code[], uint_fast8_t stack[],
+		     struct ntwt_practise prac[])
 {
-	uint_fast8_t char_num;
-	uint_fast8_t char_count;
+	struct ntwt_practise *context;
 
 	const uint_fast8_t *restrict exec_ptr = code;
-	uint_fast8_t *restrict stack_ptr = stack;
+	/* uint_fast8_t *restrict stack_ptr = stack; */
 
 	static const void *restrict const dtable[] = {
-		[READ]  = &&s_read,
-		[END]   = &&s_end,
-		[PRINT] = &&s_print,
-		[HI]    = &&s_hi
+		[READ]    = &&s_read,
+		[END]     = &&s_end,
+		[CONTEXT] = &&s_context,
+		[RUN]     = &&s_run
 	};
+
+	goto *dtable[*exec_ptr];
 
 	STATE(read) {
 		NEXTSTATE();
@@ -27,21 +29,13 @@ void ntwt_interprete(const uint_fast8_t code[], uint_fast8_t stack[])
 	STATE(end) {
 		return;
 	}
-	STATE(print) {
-		char_count = 0;
-		char_num = *(stack_ptr - 1);
-		stack_ptr -= char_num + 1;
-		while (char_num - char_count) {
-			printf("%c", *(stack_ptr + char_count));
-			++char_count;
-		}
+	STATE(context) {
+		++code;
+		context = prac + *code;
 		NEXTSTATE();
 	}
-	STATE(hi) {
-		*stack_ptr++ = 'H';
-		*stack_ptr++ = 'i';
-		*stack_ptr++ = '\n';
-		*stack_ptr++ = 3;
+	STATE(run) {
+		ntwt_practise_run(context);
 		NEXTSTATE();
 	}
 }

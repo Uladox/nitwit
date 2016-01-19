@@ -11,14 +11,6 @@
 /* 	[1] =  */
 /* } */
 
-struct practise {
-	void (*action)(double *,
-		       double *,
-		       double *);
-	double can_happen;
-	double strength;
-	double unsatisfied;
-};
 
 void yell(double *can_happen,
 	  double *strength,
@@ -29,34 +21,6 @@ void yell(double *can_happen,
 		*unsatisfied -= (1.0 - *strength);
 	} else {
 		*unsatisfied += *strength;
-	}
-}
-
-struct practise *practise_new(void (*action)(double *,
-					     double *,
-					     double *),
-			      double can_happen,
-			      double strength,
-			      double unsatisfied)
-{
-	struct practise *p;
-
-	p = malloc(sizeof(struct practise));
-	p->action = action;
-	p->can_happen = can_happen;
-	p->strength = strength;
-	p->unsatisfied = unsatisfied;
-
-	return p;
-}
-
-void run_practise(struct practise *p)
-{
-	while (1) {
-		usleep(4000);
-		p->action(&p->can_happen,
-			  &p->strength,
-			  &p->unsatisfied);
 	}
 }
 
@@ -93,7 +57,7 @@ void *echo_socket(void *input)
 
 int main(int argc, char **args)
 {
-	struct practise *p;
+	struct ntwt_practise p[100];
 	struct ntwt_connecter *find_socket;
 	struct ntwt_connection *connect_socket;
 	pthread_t user_thread;
@@ -104,18 +68,19 @@ int main(int argc, char **args)
 
 	sleep(3);
 	/* ntwt_connection_kill(connect_socket); */
-	/* uint_fast8_t code[] = { */
-	/* 	PRINT, */
-	/* 	HI, */
-	/* 	PRINT, */
-	/* 	END */
-	/* }; */
-	/* uint_fast8_t stack[100]; */
+	uint_fast8_t code[] = {
+		CONTEXT,
+		PRAC_1,
+		RUN,
+		END
+	};
+	uint_fast8_t stack[100];
 
-	/* ntwt_interprete(code, stack); */
+	ntwt_practise_load(p, yell, 0.05, 0.005, 0.007);
 
-	p = practise_new(yell, 0.05, 0.005, 0.007);
-	run_practise(p);
+	ntwt_interprete(code, stack, p);
+
+	/* ntwt_practise_run(p); */
 
 	pthread_join(user_thread, NULL);
 	ntwt_connecter_free(find_socket);

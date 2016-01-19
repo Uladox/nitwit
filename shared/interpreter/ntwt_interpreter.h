@@ -3,8 +3,13 @@
 
 #include <stdint.h>
 
-enum { READ, END, PRINT, HI };
+#include "../practise/ntwt_practise.h"
 
-void ntwt_interprete(const uint_fast8_t code[], uint_fast8_t stack[]);
+enum { READ, END, CONTEXT, RUN, CHANCE };
+
+enum { PRAC_1 = 0, PRAC_2, PRAC_3};
+
+void ntwt_interprete(const uint_fast8_t code[], uint_fast8_t stack[],
+		     struct ntwt_practise prac[]);
 
 #endif
