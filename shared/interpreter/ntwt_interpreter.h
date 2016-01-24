@@ -9,7 +9,7 @@ enum { READ, END, CONTEXT, RUN, TEST };
 
 enum { PRAC_1 = 0, PRAC_2, PRAC_3};
 
-void ntwt_interprete(const uint_fast8_t code[], uint_fast8_t stack[],
+void ntwt_interprete(const char code[], char stack[],
 		     struct ntwt_practise prac[]);
 
 #endif

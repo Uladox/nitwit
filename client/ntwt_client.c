@@ -57,20 +57,23 @@ int main(void)
 	while (!ntwt_connection_end_check(sock)) {
 	        printf("> ");
 		fgets(*str, 100, stdin);
+		/* For C-d */
 		if (feof(stdin))
 			break;
 		message_size = strlen(*str);
+		/* Replaces '\n' with '\0' */
 		(*str)[message_size - 1] = '\0';
 		compile(*str, *str);
 		/* send(sock->sd, &message_size, sizeof(unsigned int), 0); */
 		ntwt_connection_send(sock, (char *) &message_size,
 				     sizeof(unsigned int));
 		ntwt_connection_send(sock, *str, message_size);
-		while (ntwt_connection_read(sock, str, &size,
-					 &message_size) != 1) {
-		}
-		printf("echo> %s\n", *str);
+		/* while (ntwt_connection_read(sock, str, &size, */
+		/* 			 &message_size) != 1) { */
+		/* } */
+		/* printf("echo> %s\n", *str); */
 	}
+	putchar('\n');
 	free(*str);
 	free(str);
 	ntwt_connection_free(sock);

@@ -4,15 +4,19 @@
 
 #define STATE(x)      s_##x :
 #define GOTOSTATE(x)  goto s_##x
-#define NEXTSTATE()  do { ++exec_ptr; goto *dtable[*exec_ptr]; } while(0)
+#define NEXTSTATE()					\
+	do {						\
+		++exec_ptr;				\
+		goto *dtable[(uint8_t) *exec_ptr];	\
+	} while(0)
 
-void ntwt_interprete(const uint_fast8_t code[], uint_fast8_t stack[],
+void ntwt_interprete(const char code[], char stack[],
 		     struct ntwt_practise prac[])
 {
 	struct ntwt_practise *context;
 
-	const uint_fast8_t *restrict exec_ptr = code;
-	/* uint_fast8_t *restrict stack_ptr = stack; */
+	const char *restrict exec_ptr = code;
+	/* char *restrict stack_ptr = stack; */
 
 	static const void *restrict const dtable[] = {
 		[READ]    = &&s_read,
@@ -22,7 +26,7 @@ void ntwt_interprete(const uint_fast8_t code[], uint_fast8_t stack[],
 		[TEST]    = &&s_test
 	};
 
-	goto *dtable[*exec_ptr];
+	goto *dtable[(uint8_t) *exec_ptr];
 
 	STATE(read) {
 		NEXTSTATE();
@@ -41,6 +45,7 @@ void ntwt_interprete(const uint_fast8_t code[], uint_fast8_t stack[],
 	}
 	STATE(test) {
 		printf("this is a test\n");
+		NEXTSTATE();
 	}
 }
 

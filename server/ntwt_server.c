@@ -11,6 +11,9 @@
 /* 	[1] =  */
 /* } */
 
+/* struct ntwt_user { */
+	
+/* }; */
 
 void yell(double *can_happen,
 	  double *strength,
@@ -40,13 +43,13 @@ void *echo_socket(void *input)
         while (!ntwt_connection_end_check(sock)) {
 		if (ntwt_connection_read
 		    (sock, str, &size, &message_size) == 1) {
-			printf("Got string: %s\n", *str);
-			send(sock->sd, &message_size,
-			     sizeof(unsigned int), MSG_NOSIGNAL);
+			/* printf("Got string: %s\n", *str); */
+			/* send(sock->sd, &message_size, */
+			/*      sizeof(unsigned int), MSG_NOSIGNAL); */
 			/* write(sock->sd, &message_size, sizeof(unsigned int)); */
-			ntwt_connection_send(sock, *str,
-					     message_size);
-			ntwt_interprete((uint_fast8_t *) *str, NULL, NULL);
+			/* ntwt_connection_send(sock, *str, */
+			/* 		     message_size); */
+			ntwt_interprete(*str, NULL, NULL);
 		}
         }
 	free(*str);
@@ -69,13 +72,13 @@ int main(int argc, char **args)
 
 	sleep(3);
 	/* ntwt_connection_kill(connect_socket); */
-	uint_fast8_t code[] = {
+	char code[] = {
 		CONTEXT,
 		PRAC_1,
 		RUN,
 		END
 	};
-	uint_fast8_t stack[100];
+	char stack[100];
 
 	ntwt_practise_load(p, yell, 0.05, 0.005, 0.007);
 
