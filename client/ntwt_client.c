@@ -32,6 +32,12 @@ void compile(char *input, char *output)
 		case 't':
 			*output = TEST;
 			break;
+		case 's':
+			*output = STRONGER;
+			break;
+		case '1':
+			*output = PRAC_1;
+			break;
 		case '\n':
 			printf("oh no!\n");
 			break;

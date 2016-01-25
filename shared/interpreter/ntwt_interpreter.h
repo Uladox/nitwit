@@ -5,7 +5,7 @@
 
 #include "../practise/ntwt_practise.h"
 
-enum { READ, END, CONTEXT, RUN, TEST };
+enum { READ, END, CONTEXT, RUN, TEST, STRONGER };
 
 enum { PRAC_1 = 0, PRAC_2, PRAC_3};
 

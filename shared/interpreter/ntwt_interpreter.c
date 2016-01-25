@@ -19,11 +19,12 @@ void ntwt_interprete(const char code[], char stack[],
 	/* char *restrict stack_ptr = stack; */
 
 	static const void *restrict const dtable[] = {
-		[READ]    = &&s_read,
-		[END]     = &&s_end,
-		[CONTEXT] = &&s_context,
-		[RUN]     = &&s_run,
-		[TEST]    = &&s_test
+		[READ]     = &&s_read,
+		[END]      = &&s_end,
+		[CONTEXT]  = &&s_context,
+		[RUN]      = &&s_run,
+		[TEST]     = &&s_test,
+		[STRONGER] = &&s_stronger
 	};
 
 	goto *dtable[(uint8_t) *exec_ptr];
@@ -45,6 +46,10 @@ void ntwt_interprete(const char code[], char stack[],
 	}
 	STATE(test) {
 		printf("this is a test\n");
+		NEXTSTATE();
+	}
+	STATE(stronger) {
+	        ntwt_practise_stronger(context, 0.1);
 		NEXTSTATE();
 	}
 }

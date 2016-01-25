@@ -48,3 +48,10 @@ void ntwt_practise_run(struct ntwt_practise *p)
 		pthread_mutex_unlock(&p->done_mutex);
 	}
 }
+
+void ntwt_practise_stronger(struct ntwt_practise *p, double amount)
+{
+	pthread_mutex_lock(&p->done_mutex);
+	p->strength += amount * (1 - p->strength);
+	pthread_mutex_unlock(&p->done_mutex);
+}

@@ -11,10 +11,6 @@
 /* 	[1] =  */
 /* } */
 
-/* struct ntwt_user { */
-	
-/* }; */
-
 void yell(double *can_happen,
 	  double *strength,
 	  double *unsatisfied)
@@ -36,6 +32,11 @@ void *echo_socket(void *input)
 	int message_size;
 	char **str;
 
+	struct ntwt_practise p[100];
+	char stack[100];
+
+	ntwt_practise_load(p, yell, 0.05, 0.005, 0.007);
+
 	sock = input;
 	str = malloc(sizeof(char *));
 	*str = malloc(size);
@@ -49,7 +50,7 @@ void *echo_socket(void *input)
 			/* write(sock->sd, &message_size, sizeof(unsigned int)); */
 			/* ntwt_connection_send(sock, *str, */
 			/* 		     message_size); */
-			ntwt_interprete(*str, NULL, NULL);
+			ntwt_interprete(*str, stack, p);
 		}
         }
 	free(*str);
@@ -61,7 +62,7 @@ void *echo_socket(void *input)
 
 int main(int argc, char **args)
 {
-	struct ntwt_practise p[100];
+	/* struct ntwt_practise p[100]; */
 	struct ntwt_connecter *find_socket;
 	struct ntwt_connection *connect_socket;
 	pthread_t user_thread;
@@ -70,19 +71,19 @@ int main(int argc, char **args)
         connect_socket = ntwt_connecter_accept(find_socket);
 	pthread_create(&user_thread, NULL, echo_socket, (void *) connect_socket);
 
-	sleep(3);
+	/* sleep(3); */
 	/* ntwt_connection_kill(connect_socket); */
-	char code[] = {
-		CONTEXT,
-		PRAC_1,
-		RUN,
-		END
-	};
-	char stack[100];
+	/* char code[] = { */
+	/* 	CONTEXT, */
+	/* 	PRAC_1, */
+	/* 	RUN, */
+	/* 	END */
+	/* }; */
+	/* char stack[100]; */
 
-	ntwt_practise_load(p, yell, 0.05, 0.005, 0.007);
+	/* ntwt_practise_load(p, yell, 0.05, 0.005, 0.007); */
 
-	ntwt_interprete(code, stack, p);
+	/* ntwt_interprete(code, stack, p); */
 
 	/* ntwt_practise_run(p); */
 
