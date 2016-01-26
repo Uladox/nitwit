@@ -11,6 +11,7 @@ struct ntwt_practise {
 	double strength;
 	double unsatisfied;
 
+	pthread_t thread;
 	pthread_mutex_t done_mutex;
 };
 

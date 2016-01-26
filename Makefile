@@ -16,9 +16,9 @@ release: $(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client
 
 define make-execs
 $(DEBUG_PATH)/$(1): $(addprefix $(DEBUG_PATH)/,$(2))
-	gcc -g     -Wall -Werror $$^ -o $$@ $(3)
+	gcc -std=gnu99 -g     -Wall -Werror $$^ -o $$@ $(3)
 $(RELEASE_PATH)/$(1): $(addprefix $(RELEASE_PATH)/,$(2))
-	gcc -Ofast -Wall -Werror $$^ -o $$@ $(3)
+	gcc -std=gnu99 -Ofast -Wall -Werror $$^ -o $$@ $(3)
 endef
 
 SERVER_FILES = \
@@ -32,9 +32,9 @@ $(eval $(call make-execs,nitwit_client,ntwt_client.o ntwt_socket.o,));
 
 define make-objs
 $(patsubst %.c, $(DEBUG_PATH)/%.o, $(notdir $(1))): $(1)
-	gcc -g     -c -Wall -Werror $$< -o $$@
+	gcc -std=gnu99 -g     -c -Wall -Werror $$< -o $$@
 $(patsubst %.c, $(RELEASE_PATH)/%.o, $(notdir $(1))): $(1)
-	gcc -Ofast -c -Wall -Werror $$< -o $$@
+	gcc -std=gnu99 -Ofast -c -Wall -Werror $$< -o $$@
 endef
 
 $(foreach src,$(SRC_FILES),$(eval $(call make-objs,$(src))));

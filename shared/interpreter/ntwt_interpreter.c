@@ -10,6 +10,12 @@
 		goto *dtable[(uint8_t) *exec_ptr];	\
 	} while(0)
 
+static void *threaded_practise_run(void *p)
+{
+	ntwt_practise_run(p);
+	return NULL;
+}
+
 void ntwt_interprete(const char code[], char stack[],
 		     struct ntwt_practise prac[])
 {
@@ -41,7 +47,9 @@ void ntwt_interprete(const char code[], char stack[],
 		NEXTSTATE();
 	}
 	STATE(run) {
-		ntwt_practise_run(context);
+		pthread_create(&((struct ntwt_practise *) context)->thread,
+			       NULL, threaded_practise_run,
+			       (void *) context);
 		NEXTSTATE();
 	}
 	STATE(test) {
