@@ -5,9 +5,11 @@
 
 #include "../practise/ntwt_practise.h"
 
-enum { READ, END, CONTEXT, RUN, TEST, STRONGER };
-
-enum { PRAC_1 = 0, PRAC_2, PRAC_3};
+enum { READ, END, CONTEXT, TEST,
+       /* Awareness operations */
+       AWAKE,
+       /* Practise  operations */
+       RUN, STRONGER };
 
 void ntwt_interprete(const char code[], char stack[],
 		     struct ntwt_practise prac[]);

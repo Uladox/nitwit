@@ -44,12 +44,6 @@ void *echo_socket(void *input)
         while (!ntwt_connection_end_check(sock)) {
 		if (ntwt_connection_read
 		    (sock, str, &size, &message_size) == 1) {
-			/* printf("Got string: %s\n", *str); */
-			/* send(sock->sd, &message_size, */
-			/*      sizeof(unsigned int), MSG_NOSIGNAL); */
-			/* write(sock->sd, &message_size, sizeof(unsigned int)); */
-			/* ntwt_connection_send(sock, *str, */
-			/* 		     message_size); */
 			ntwt_interprete(*str, stack, p);
 		}
         }

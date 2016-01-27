@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 #include "ntwt_interpreter.h"
 
@@ -16,6 +18,15 @@ static void *threaded_practise_run(void *p)
 	return NULL;
 }
 
+static void *threaded_awareness_run(void *a)
+{
+	while (1) {
+		printf("AWARE!\n");
+		usleep(4000 * 100);
+	}
+	return NULL;
+}
+
 void ntwt_interprete(const char code[], char stack[],
 		     struct ntwt_practise prac[])
 {
@@ -28,35 +39,41 @@ void ntwt_interprete(const char code[], char stack[],
 		[READ]     = &&s_read,
 		[END]      = &&s_end,
 		[CONTEXT]  = &&s_context,
-		[RUN]      = &&s_run,
 		[TEST]     = &&s_test,
+		[AWAKE]    = &&s_awake,
+		[RUN]      = &&s_run,
 		[STRONGER] = &&s_stronger
 	};
 
 	goto *dtable[(uint8_t) *exec_ptr];
 
-	STATE(read) {
+	STATE (read) {
 		NEXTSTATE();
 	}
-	STATE(end) {
+	STATE (end) {
 		return;
 	}
-	STATE(context) {
+	STATE (context) {
 		++code;
 		context = prac + *code;
 		NEXTSTATE();
 	}
-	STATE(run) {
+	STATE (test) {
+		printf("this is a test\n");
+		NEXTSTATE();
+	}
+	STATE (awake) {
+		pthread_create(malloc(sizeof(pthread_t)), NULL,
+			       threaded_awareness_run, NULL);
+		NEXTSTATE();
+	}
+	STATE (run) {
 		pthread_create(&((struct ntwt_practise *) context)->thread,
 			       NULL, threaded_practise_run,
 			       (void *) context);
 		NEXTSTATE();
 	}
-	STATE(test) {
-		printf("this is a test\n");
-		NEXTSTATE();
-	}
-	STATE(stronger) {
+	STATE (stronger) {
 	        ntwt_practise_stronger(context, 0.1);
 		NEXTSTATE();
 	}
