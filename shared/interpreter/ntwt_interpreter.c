@@ -27,10 +27,8 @@ static void *threaded_awareness_run(void *a)
 	return NULL;
 }
 
-void ntwt_interprete(const char code[], char stack[],
-		     struct ntwt_practise prac[])
+void ntwt_interprete(struct ntwt_instance *state, const char code[])
 {
-	struct ntwt_practise *context;
 
 	const char *restrict exec_ptr = code;
 	/* char *restrict stack_ptr = stack; */
@@ -42,7 +40,8 @@ void ntwt_interprete(const char code[], char stack[],
 		[TEST]     = &&s_test,
 		[AWAKE]    = &&s_awake,
 		[RUN]      = &&s_run,
-		[STRONGER] = &&s_stronger
+		[STRONGER] = &&s_stronger,
+		[SAVE]     = &&s_save
 	};
 
 	goto *dtable[(uint8_t) *exec_ptr];
@@ -55,7 +54,7 @@ void ntwt_interprete(const char code[], char stack[],
 	}
 	STATE (context) {
 		++code;
-		context = prac + *code;
+		state->context = state->practises + *code;
 		NEXTSTATE();
 	}
 	STATE (test) {
@@ -63,18 +62,25 @@ void ntwt_interprete(const char code[], char stack[],
 		NEXTSTATE();
 	}
 	STATE (awake) {
-		pthread_create(malloc(sizeof(pthread_t)), NULL,
+		pthread_create(&state->awareness, NULL,
 			       threaded_awareness_run, NULL);
 		NEXTSTATE();
 	}
 	STATE (run) {
-		pthread_create(&((struct ntwt_practise *) context)->thread,
+		pthread_create(&state->context->thread,
 			       NULL, threaded_practise_run,
-			       (void *) context);
+			       (void *) state->context);
 		NEXTSTATE();
 	}
 	STATE (stronger) {
-	        ntwt_practise_stronger(context, 0.1);
+	        ntwt_practise_stronger(state->context, 0.1);
+		NEXTSTATE();
+	}
+	STATE (save) {
+		FILE *image = fopen("state.ilk", "wrb");
+		char test_save[2] = { TEST, END };
+		fwrite(&test_save, sizeof(char), 2, image);
+		fclose(image);
 		NEXTSTATE();
 	}
 }

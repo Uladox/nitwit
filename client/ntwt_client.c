@@ -41,6 +41,9 @@ void compile(char *input, char *output)
 		case '0':
 			*output = 0;
 			break;
+		case '!':
+			*output = SAVE;
+			break;
 		case '\n':
 			printf("oh no!\n");
 			break;

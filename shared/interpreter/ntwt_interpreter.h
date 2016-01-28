@@ -9,9 +9,16 @@ enum { READ, END, CONTEXT, TEST,
        /* Awareness operations */
        AWAKE,
        /* Practise  operations */
-       RUN, STRONGER };
+       RUN, STRONGER,
+       /* Writing operations */
+       SAVE };
 
-void ntwt_interprete(const char code[], char stack[],
-		     struct ntwt_practise prac[]);
+struct ntwt_instance {
+	struct ntwt_practise *context;
+	struct ntwt_practise *practises;
+	pthread_t awareness;
+};
+
+void ntwt_interprete(struct ntwt_instance *state, const char code[]);
 
 #endif
