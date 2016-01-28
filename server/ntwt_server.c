@@ -31,7 +31,8 @@ void *echo_socket(void *input)
 	struct ntwt_instance state;
 
 	state.practises = malloc(sizeof(struct ntwt_practise) * 100);
-	ntwt_practise_load(state.practises, yell, 0.05, 0.005, 0.007);
+	ntwt_practise_load(state.practises, ntwt_action_new(0, NULL, yell),
+			   0.05, 0.005, 0.007);
 	state.context = NULL;
 
 	sock = input;
@@ -66,7 +67,7 @@ int main(int argc, char *args[])
 	char *image_code;
 
 	state.practises = malloc(sizeof(struct ntwt_practise) * 100);
-	ntwt_practise_load(state.practises, yell, 0.0, 0.0, 0.0);
+	ntwt_practise_load(state.practises, ntwt_action_new(0, NULL, yell), 0.0, 0.0, 0.0);
 	state.context = NULL;
 
 	if (argc >= 2)

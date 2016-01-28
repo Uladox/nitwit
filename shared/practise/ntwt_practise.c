@@ -3,9 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-struct ntwt_practise *ntwt_practise_new(void (*action)(double *,
-					     double *,
-					     double *),
+struct ntwt_practise *ntwt_practise_new(struct ntwt_action *action,
 					double can_happen,
 					double strength,
 					double unsatisfied)
@@ -22,10 +20,24 @@ struct ntwt_practise *ntwt_practise_new(void (*action)(double *,
 	return p;
 }
 
+struct ntwt_action *ntwt_action_new(unsigned int id,
+				    char *location,
+				    void (*funct)(double *,
+						  double *,
+						  double *))
+{
+	struct ntwt_action *action;
+
+	action = malloc(sizeof(struct ntwt_action));
+	action->id = id;
+	action->location = location;
+	action->funct = funct;
+
+	return action;
+}
+
 void ntwt_practise_load(struct ntwt_practise *p,
-			void (*action)(double *,
-				       double *,
-				       double *),
+			struct ntwt_action *action,
 			double can_happen,
 			double strength,
 			double unsatisfied)
@@ -42,9 +54,9 @@ void ntwt_practise_run(struct ntwt_practise *p)
 	while (1) {
 		usleep(4000);
 		pthread_mutex_lock(&p->done_mutex);
-		p->action(&p->can_happen,
-			  &p->strength,
-			  &p->unsatisfied);
+		p->action->funct(&p->can_happen,
+				 &p->strength,
+				 &p->unsatisfied);
 		pthread_mutex_unlock(&p->done_mutex);
 	}
 }

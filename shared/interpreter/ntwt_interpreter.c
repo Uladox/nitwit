@@ -12,6 +12,18 @@
 		goto *dtable[(uint8_t) *exec_ptr];	\
 	} while(0)
 
+void test_fnct(double *can_happen,
+	       double *strength,
+	       double *unsatisfied)
+{
+	if (*can_happen * *strength > (1.0 - *unsatisfied)) {
+		printf("This is a function!\n");
+		*unsatisfied -= (1.0 - *strength);
+	} else {
+		*unsatisfied += *strength;
+	}
+}
+
 static void *threaded_practise_run(void *p)
 {
 	ntwt_practise_run(p);
@@ -39,6 +51,7 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		[NTWT_OP_CONTEXT]     = &&s_context,
 		[NTWT_OP_TEST]        = &&s_test,
 		[NTWT_OP_AWAKE]       = &&s_awake,
+		[NTWT_OP_ACTION]      = &&s_action,
 		[NTWT_OP_STRENGTH]    = &&s_strength,
 		[NTWT_OP_CAN_HAPPEN]  = &&s_can_happen,
 		[NTWT_OP_UNSATISFIED] = &&s_unsatisfied,
@@ -67,6 +80,10 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 	STATE (awake) {
 		pthread_create(&state->awareness, NULL,
 			       threaded_awareness_run, NULL);
+		NEXTSTATE();
+	}
+	STATE (action) {
+		state->context->action = ntwt_action_new(0, NULL, test_fnct);
 		NEXTSTATE();
 	}
 	STATE (strength) {
@@ -116,6 +133,9 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 
 		s_op[0] = 0;
 		fwrite(s_op, 1, 1, image);
+
+		s_op[0] = NTWT_OP_ACTION;
+		fwrite(&s_op[0], 1, 1, image);
 
 		s_op[0] = NTWT_OP_STRENGTH;
 		fwrite(s_op, sizeof(char), 1, image);

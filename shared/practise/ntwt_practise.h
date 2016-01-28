@@ -3,10 +3,17 @@
 
 #include <pthread.h>
 
+struct ntwt_action {
+	unsigned int id;
+	char *location;
+	void (*funct)(double *,
+		      double *,
+		      double *);
+
+};
+
 struct ntwt_practise {
-	void (*action)(double *,
-		       double *,
-		       double *);
+	struct ntwt_action *action;
 	double can_happen;
 	double strength;
 	double unsatisfied;
@@ -15,10 +22,14 @@ struct ntwt_practise {
 	pthread_mutex_t done_mutex;
 };
 
+struct ntwt_action *ntwt_action_new(unsigned int id,
+				    char *location,
+				    void (*funct)(double *,
+						  double *,
+						  double *));
+
 void ntwt_practise_load(struct ntwt_practise *p,
-			void (*action)(double *,
-				       double *,
-				       double *),
+			struct ntwt_action *action,
 			double can_happen,
 			double strength,
 			double unsatisfied);
