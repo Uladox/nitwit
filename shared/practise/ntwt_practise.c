@@ -49,6 +49,27 @@ void ntwt_practise_run(struct ntwt_practise *p)
 	}
 }
 
+void ntwt_practise_strength(struct ntwt_practise *p, double amount)
+{
+	pthread_mutex_lock(&p->done_mutex);
+	p->strength = amount;
+	pthread_mutex_unlock(&p->done_mutex);
+}
+
+void ntwt_practise_can_happen(struct ntwt_practise *p, double amount)
+{
+	pthread_mutex_lock(&p->done_mutex);
+	p->can_happen = amount;
+	pthread_mutex_unlock(&p->done_mutex);
+}
+
+void ntwt_practise_unsatisfied(struct ntwt_practise *p, double amount)
+{
+	pthread_mutex_lock(&p->done_mutex);
+	p->unsatisfied = amount;
+	pthread_mutex_unlock(&p->done_mutex);
+}
+
 void ntwt_practise_stronger(struct ntwt_practise *p, double amount)
 {
 	pthread_mutex_lock(&p->done_mutex);

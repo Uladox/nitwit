@@ -34,14 +34,17 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 	/* char *restrict stack_ptr = stack; */
 
 	static const void *restrict const dtable[] = {
-		[READ]     = &&s_read,
-		[END]      = &&s_end,
-		[CONTEXT]  = &&s_context,
-		[TEST]     = &&s_test,
-		[AWAKE]    = &&s_awake,
-		[RUN]      = &&s_run,
-		[STRONGER] = &&s_stronger,
-		[SAVE]     = &&s_save
+		[NTWT_OP_READ]        = &&s_read,
+		[NTWT_OP_END]         = &&s_end,
+		[NTWT_OP_CONTEXT]     = &&s_context,
+		[NTWT_OP_TEST]        = &&s_test,
+		[NTWT_OP_AWAKE]       = &&s_awake,
+		[NTWT_OP_STRENGTH]    = &&s_strength,
+		[NTWT_OP_CAN_HAPPEN]  = &&s_can_happen,
+		[NTWT_OP_UNSATISFIED] = &&s_unsatisfied,
+		[NTWT_OP_RUN]         = &&s_run,
+		[NTWT_OP_STRONGER]    = &&s_stronger,
+		[NTWT_OP_SAVE]        = &&s_save
 	};
 
 	goto *dtable[(uint8_t) *exec_ptr];
@@ -53,8 +56,8 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		return;
 	}
 	STATE (context) {
-		++code;
-		state->context = state->practises + *code;
+		++exec_ptr;
+		state->context = state->practises + *exec_ptr;
 		NEXTSTATE();
 	}
 	STATE (test) {
@@ -64,6 +67,24 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 	STATE (awake) {
 		pthread_create(&state->awareness, NULL,
 			       threaded_awareness_run, NULL);
+		NEXTSTATE();
+	}
+	STATE (strength) {
+		++exec_ptr;
+		ntwt_practise_strength(state->context, *((double *) exec_ptr));
+		exec_ptr = ((char *) (((double *) exec_ptr) + 1)) - 1;
+		NEXTSTATE();
+	}
+	STATE (can_happen) {
+		++exec_ptr;
+		ntwt_practise_can_happen(state->context, *((double *) exec_ptr));
+		exec_ptr = ((char *) (((double *) exec_ptr) + 1)) - 1;
+		NEXTSTATE();
+	}
+	STATE (unsatisfied) {
+		++exec_ptr;
+		ntwt_practise_unsatisfied(state->context, *((double *) exec_ptr));
+		exec_ptr = ((char *) (((double *) exec_ptr) + 1)) - 1;
 		NEXTSTATE();
 	}
 	STATE (run) {
@@ -77,9 +98,46 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		NEXTSTATE();
 	}
 	STATE (save) {
-		FILE *image = fopen("state.ilk", "wrb");
-		char test_save[2] = { TEST, END };
-		fwrite(&test_save, sizeof(char), 2, image);
+		remove("state.ilk");
+		FILE *image = fopen("state.ilk", "ab");
+		/* char test_save[] = { TEST, CONTEXT, 0, RUN, END}; */
+		/* fwrite(&test_save, sizeof(char), sizeof(test_save), image); */
+		char s_op[1];
+		double d_op[1];
+
+		s_op[0] = NTWT_OP_TEST;
+		fwrite(s_op, 1, 1, image);
+
+		s_op[0] = NTWT_OP_TEST;
+		fwrite(s_op, 1, 1, image);
+
+		s_op[0] = NTWT_OP_CONTEXT;
+		fwrite(&s_op[0], 1, 1, image);
+
+		s_op[0] = 0;
+		fwrite(s_op, 1, 1, image);
+
+		s_op[0] = NTWT_OP_STRENGTH;
+		fwrite(s_op, sizeof(char), 1, image);
+		d_op[0] = state->context->strength;
+		fwrite(d_op, sizeof(double), 1, image);
+
+		s_op[0] = NTWT_OP_CAN_HAPPEN;
+		fwrite(s_op, sizeof(char), 1, image);
+		d_op[0] = state->context->can_happen;
+		fwrite(d_op, sizeof(double), 1, image);
+
+		s_op[0] = NTWT_OP_UNSATISFIED;
+		fwrite(s_op, sizeof(char), 1, image);
+		d_op[0] = state->context->unsatisfied;
+		fwrite(d_op, sizeof(double), 1, image);
+
+		s_op[0] = NTWT_OP_RUN;
+		fwrite(s_op, 1, 1, image);
+
+		s_op[0] = NTWT_OP_END;
+		fwrite(s_op, 1, 1, image);
+
 		fclose(image);
 		NEXTSTATE();
 	}

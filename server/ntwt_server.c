@@ -66,7 +66,7 @@ int main(int argc, char *args[])
 	char *image_code;
 
 	state.practises = malloc(sizeof(struct ntwt_practise) * 100);
-	ntwt_practise_load(state.practises, yell, 0.05, 0.005, 0.007);
+	ntwt_practise_load(state.practises, yell, 0.0, 0.0, 0.0);
 	state.context = NULL;
 
 	if (argc >= 2)

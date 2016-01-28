@@ -18,31 +18,31 @@ void compile(char *input, char *output)
 	{
 		switch(*input) {
 		case 'r':
-			*output = READ;
+			*output = NTWT_OP_READ;
 			break;
 		case 'e':
-			*output = END;
+			*output = NTWT_OP_END;
 			break;
 		case 'c':
-			*output = CONTEXT;
+			*output = NTWT_OP_CONTEXT;
 			break;
 		case 'u':
-			*output = RUN;
+			*output = NTWT_OP_RUN;
 			break;
 		case 't':
-			*output = TEST;
+			*output = NTWT_OP_TEST;
 			break;
 		case 'a':
-			*output = AWAKE;
+			*output = NTWT_OP_AWAKE;
 			break;
 		case 's':
-			*output = STRONGER;
+			*output = NTWT_OP_STRONGER;
 			break;
 		case '0':
 			*output = 0;
 			break;
 		case '!':
-			*output = SAVE;
+			*output = NTWT_OP_SAVE;
 			break;
 		case '\n':
 			printf("oh no!\n");

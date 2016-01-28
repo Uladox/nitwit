@@ -25,6 +25,12 @@ void ntwt_practise_load(struct ntwt_practise *p,
 
 void ntwt_practise_run(struct ntwt_practise *p);
 
+void ntwt_practise_strength(struct ntwt_practise *p, double amount);
+
+void ntwt_practise_can_happen(struct ntwt_practise *p, double amount);
+
+void ntwt_practise_unsatisfied(struct ntwt_practise *p, double amount);
+
 void ntwt_practise_stronger(struct ntwt_practise *p, double amount);
 
 #endif
