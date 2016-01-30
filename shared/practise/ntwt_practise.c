@@ -1,7 +1,36 @@
 #include "ntwt_practise.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
+
+static void test_fnct(double *can_happen,
+		      double *strength,
+		      double *unsatisfied)
+{
+	if (*can_happen * *strength > (1.0 - *unsatisfied)) {
+		printf("This is a function!\n");
+		*unsatisfied -= (1.0 - *strength);
+	} else {
+		*unsatisfied += *strength;
+	}
+}
+
+static struct ntwt_action ntwt_built_in_actions[] = {
+	[0] = { .package_num = 0,
+		.id = 0,
+		.name = "test",
+		.funct = test_fnct }
+};
+
+struct ntwt_package ntwt_std_package = {
+	.location = NULL,
+	.action_num = sizeof(ntwt_built_in_actions) /
+	              sizeof(struct ntwt_action),
+	.action_max = sizeof(ntwt_built_in_actions) /
+	              sizeof(struct ntwt_action),
+	.actions = ntwt_built_in_actions
+};
 
 struct ntwt_practise *ntwt_practise_new(struct ntwt_action *action,
 					double can_happen,
@@ -20,8 +49,9 @@ struct ntwt_practise *ntwt_practise_new(struct ntwt_action *action,
 	return p;
 }
 
-struct ntwt_action *ntwt_action_new(unsigned int id,
-				    char *location,
+struct ntwt_action *ntwt_action_new(char *name,
+				    unsigned int package_num,
+				    unsigned int id,
 				    void (*funct)(double *,
 						  double *,
 						  double *))
@@ -29,8 +59,9 @@ struct ntwt_action *ntwt_action_new(unsigned int id,
 	struct ntwt_action *action;
 
 	action = malloc(sizeof(struct ntwt_action));
+	action->name = name;
+	action->package_num = package_num;
 	action->id = id;
-	action->location = location;
 	action->funct = funct;
 
 	return action;

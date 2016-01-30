@@ -12,18 +12,6 @@
 		goto *dtable[(uint8_t) *exec_ptr];	\
 	} while(0)
 
-void test_fnct(double *can_happen,
-	       double *strength,
-	       double *unsatisfied)
-{
-	if (*can_happen * *strength > (1.0 - *unsatisfied)) {
-		printf("This is a function!\n");
-		*unsatisfied -= (1.0 - *strength);
-	} else {
-		*unsatisfied += *strength;
-	}
-}
-
 static void *threaded_practise_run(void *p)
 {
 	ntwt_practise_run(p);
@@ -43,6 +31,7 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 {
 
 	const char *restrict exec_ptr = code;
+
 	/* char *restrict stack_ptr = stack; */
 
 	static const void *restrict const dtable[] = {
@@ -57,7 +46,8 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		[NTWT_OP_UNSATISFIED] = &&s_unsatisfied,
 		[NTWT_OP_RUN]         = &&s_run,
 		[NTWT_OP_STRONGER]    = &&s_stronger,
-		[NTWT_OP_SAVE]        = &&s_save
+		[NTWT_OP_SAVE]        = &&s_save,
+		[NTWT_OP_INIT_PACK]   = &&s_init_pack
 	};
 
 	goto *dtable[(uint8_t) *exec_ptr];
@@ -83,7 +73,17 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		NEXTSTATE();
 	}
 	STATE (action) {
-		state->context->action = ntwt_action_new(0, NULL, test_fnct);
+		unsigned int action_package_location;
+		unsigned int action_id;
+
+		++exec_ptr;
+		action_package_location =
+			*((unsigned int *) exec_ptr);
+		action_id = *(((unsigned int *) exec_ptr) + 1);
+		state->context->action =
+			(*(state->packages + action_package_location))
+			->actions + action_id;
+		exec_ptr = ((char *) (((unsigned int *) exec_ptr) + 2)) - 1;
 		NEXTSTATE();
 	}
 	STATE (strength) {
@@ -159,6 +159,23 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		fwrite(s_op, 1, 1, image);
 
 		fclose(image);
+		NEXTSTATE();
+	}
+	STATE (init_pack) {
+		++exec_ptr;
+		state->package_max = *((unsigned int *) exec_ptr);
+		state->packages = malloc
+			(sizeof(struct ntwt_package *) *
+			 state->package_max);
+		*state->packages = &ntwt_std_package;
+		state->package_ptr = 1;
+		exec_ptr = ((char *) (((unsigned int *) exec_ptr) + 1)) - 1;
+		printf("wot?!\n");
+
+		/* For testing only */
+		state->practises->can_happen = 0.5;
+		state->practises->strength = 0.5;
+		state->practises->unsatisfied = 0.5;
 		NEXTSTATE();
 	}
 }

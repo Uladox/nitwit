@@ -4,8 +4,9 @@
 #include <pthread.h>
 
 struct ntwt_action {
+	unsigned int package_num;
 	unsigned int id;
-	char *location;
+	char *name;
 	void (*funct)(double *,
 		      double *,
 		      double *);
@@ -22,8 +23,18 @@ struct ntwt_practise {
 	pthread_mutex_t done_mutex;
 };
 
-struct ntwt_action *ntwt_action_new(unsigned int id,
-				    char *location,
+struct ntwt_package {
+	char *location;
+	unsigned int action_num;
+	unsigned int action_max;
+	struct ntwt_action *actions;
+};
+
+extern struct ntwt_package ntwt_std_package;
+
+struct ntwt_action *ntwt_action_new(char *name,
+				    unsigned int package_num,
+				    unsigned int id,
 				    void (*funct)(double *,
 						  double *,
 						  double *));
