@@ -3,7 +3,10 @@
 
 #include <pthread.h>
 
+struct ntwt_instance;
+
 struct ntwt_action {
+	char loaded;
 	unsigned int package_num;
 	unsigned int id;
 	char *name;
@@ -14,6 +17,7 @@ struct ntwt_action {
 };
 
 struct ntwt_practise {
+	char loaded;
 	struct ntwt_action *action;
 	double can_happen;
 	double strength;
@@ -24,8 +28,12 @@ struct ntwt_practise {
 };
 
 struct ntwt_package {
+	char loaded;
+	unsigned int package_num;
+
 	char *location;
-	unsigned int action_num;
+	void *handle;
+	unsigned int action_ptr;
 	unsigned int action_max;
 	struct ntwt_action *actions;
 };
@@ -44,6 +52,15 @@ void ntwt_practise_load(struct ntwt_practise *p,
 			double can_happen,
 			double strength,
 			double unsatisfied);
+
+void ntwt_instance_load_package(struct ntwt_instance *instance,
+				unsigned int package_num,
+				unsigned int action_max,
+				const char *location);
+
+void ntwt_package_load_action(struct ntwt_package *package,
+			      unsigned int id,
+			      const char *action_name);
 
 void ntwt_practise_run(struct ntwt_practise *p);
 

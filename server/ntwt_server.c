@@ -30,7 +30,9 @@ void *echo_socket(void *input)
 	/* struct ntwt_practise p[100]; */
 	struct ntwt_instance state;
 
-	state.practises = malloc(sizeof(struct ntwt_practise) * 100);
+	state.package_max = 1;
+	state.practises = calloc(100, sizeof(struct ntwt_practise));
+	state.practise_max = 100;
 	ntwt_practise_load(state.practises, ntwt_action_new("yell", 0, 0, yell),
 			   0.05, 0.005, 0.007);
 	state.context = NULL;
@@ -66,8 +68,8 @@ int main(int argc, char *args[])
 	long image_size;
 	char *image_code;
 
-	state.practises = malloc(sizeof(struct ntwt_practise) * 100);
-	ntwt_practise_load(state.practises, ntwt_action_new("yell", 0, 0, yell), 0.0, 0.0, 0.0);
+	state.practises = calloc(100, sizeof(struct ntwt_practise));
+	ntwt_practise_load(state.practises, ntwt_action_new("yell", 0, 0, yell), 0.5, 0.5, 0.5);
 	state.context = NULL;
 
 	if (argc >= 2)
