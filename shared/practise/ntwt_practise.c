@@ -141,6 +141,7 @@ void ntwt_practise_load(struct ntwt_practise *p,
 			double strength,
 			double unsatisfied)
 {
+	p->loaded = 1;
 	p->action = action;
 	p->can_happen = can_happen;
 	p->strength = strength;

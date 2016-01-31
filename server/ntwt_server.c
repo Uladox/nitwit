@@ -33,7 +33,8 @@ void *echo_socket(void *input)
 	state.package_max = 1;
 	state.practises = calloc(100, sizeof(struct ntwt_practise));
 	state.practise_max = 100;
-	ntwt_practise_load(state.practises, ntwt_action_new("yell", 0, 0, yell),
+	ntwt_practise_load(state.practises, /* ntwt_action_new("yell", 0, 0, yell) */
+			   ntwt_std_package.actions,
 			   0.05, 0.005, 0.007);
 	state.context = NULL;
 
