@@ -14,9 +14,15 @@
 	} while(0)
 #define POINTEDSTATE()				\
 	goto *dtable[(uint8_t) *exec_ptr]
-#define MOVEBY(TYPE, AMOUNT)				\
-	exec_ptr = ((char *) (((TYPE *) exec_ptr) + (AMOUNT)))
-
+#define MOVEBY(POINTER, TYPE, AMOUNT)				\
+	POINTER = ((char *) (((TYPE *) POINTER) + (AMOUNT)))
+#define COPY(VARIABLE, POINTER, TYPE)		\
+	VARIABLE = *((TYPE *) POINTER)
+#define POP(VARIABLE, POINTER, TYPE)		\
+	do {					\
+		COPY(VARIABLE, POINTER, TYPE);	\
+		MOVEBY(POINTER, TYPE, 1);	\
+	} while (0)
 static void *threaded_practise_run(void *p)
 {
 	ntwt_practise_run(p);
@@ -30,6 +36,118 @@ static void *threaded_awareness_run(void *a)
 		usleep(4000 * 100);
 	}
 	return NULL;
+}
+
+static void save_packages(struct ntwt_instance *state, FILE *image)
+{
+	unsigned int i;
+	unsigned int j;
+	struct ntwt_package *pack;
+	struct ntwt_action *action;
+	char c_op[1] = { NTWT_OP_INIT_PACK };
+
+	/* Writes packages and their actions */
+	fwrite(c_op, sizeof(char), 1, image);
+	fwrite(&state->package_max,
+	       sizeof(unsigned int), 1, image);
+	for (i = 1; i != state->package_max; ++i) {
+		pack = state->packages + i;
+		if (!pack->loaded)
+			continue;
+		unsigned int pack_args[2] = {
+			[0] = pack->package_num,
+			[1] = pack->action_max
+		};
+		c_op[0] = NTWT_OP_LOAD_PACK;
+		fwrite(c_op, sizeof(char), 1, image);
+		fwrite(pack_args, sizeof(unsigned int), 2, image);
+		fwrite(pack->location, sizeof(char),
+		       strlen(pack->location) + 1, image);
+
+		for (j = 0; j != pack->action_max; ++j) {
+			action = pack->actions + j;
+			if (!action->loaded)
+				continue;
+			unsigned int action_args[2] = {
+				[0] = action->package_num,
+				[1] = action->id
+			};
+			c_op[0] = NTWT_OP_LOAD_ACTION;
+			fwrite(c_op, sizeof(char), 1, image);
+			fwrite(action_args, sizeof(unsigned int),
+			       2, image);
+			fwrite(action->name, sizeof(char),
+			       strlen(action->name) + 1, image);
+		}
+	}
+}
+
+static void save_practises(struct ntwt_instance *state, FILE *image)
+{
+	/* Writes practises and gives them actions */
+	struct ntwt_practise *prac;
+	unsigned int i;
+	char c_op[1] = { NTWT_OP_LOAD_PRAC };
+
+	for (i = 0; i != state->practise_max; ++i) {
+		printf("hello, %u\n", i);
+		prac = state->practises + i;
+		if (!prac->loaded)
+			continue;
+		printf("loaded");
+		fwrite(c_op, sizeof(char), 1, image);
+		unsigned int int_args[3] = {
+			[0] = i,
+			[1] = prac->action->package_num,
+			[2] = prac->action->id
+		};
+		double double_args[3] = {
+			[0] = prac->strength,
+			[1] = prac->can_happen,
+			[2] = prac->unsatisfied
+		};
+		fwrite(int_args, sizeof(unsigned int),
+		       3, image);
+		fwrite(double_args, sizeof(double), 3, image);
+	}
+}
+
+static void save(struct ntwt_instance *state)
+{
+	remove("state.ilk");
+	FILE *image = fopen("state.ilk", "ab");
+	char c_op[1];
+
+	c_op[0] = NTWT_OP_TEST;
+	fwrite(c_op, 1, 1, image);
+	save_packages(state, image);
+	save_practises(state, image);
+
+	/* c_op[0] = NTWT_OP_TEST; */
+	/* fwrite(c_op, 1, 1, image); */
+	c_op[0] = NTWT_OP_CONTEXT;
+	fwrite(&c_op[0], 1, 1, image);
+	c_op[0] = 0;
+	fwrite(c_op, 1, 1, image);
+	/* c_op[0] = NTWT_OP_ACTION; */
+	/* fwrite(&c_op[0], 1, 1, image); */
+	/* c_op[0] = NTWT_OP_STRENGTH; */
+	/* fwrite(c_op, sizeof(char), 1, image); */
+	/* d_op[0] = state->context->strength; */
+	/* fwrite(d_op, sizeof(double), 1, image); */
+	/* c_op[0] = NTWT_OP_CAN_HAPPEN; */
+	/* fwrite(c_op, sizeof(char), 1, image); */
+	/* d_op[0] = state->context->can_happen; */
+	/* fwrite(d_op, sizeof(double), 1, image); */
+	/* c_op[0] = NTWT_OP_UNSATISFIED; */
+	/* fwrite(c_op, sizeof(char), 1, image); */
+	/* d_op[0] = state->context->unsatisfied; */
+	/* fwrite(d_op, sizeof(double), 1, image); */
+	c_op[0] = NTWT_OP_RUN;
+	fwrite(c_op, 1, 1, image);
+	c_op[0] = NTWT_OP_END;
+	fwrite(c_op, 1, 1, image);
+	fclose(image);
 }
 
 void ntwt_interprete(struct ntwt_instance *state, const char code[])
@@ -83,8 +201,7 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 	}
 	STATE (init_prac) {
 		++exec_ptr;
-		state->practise_max = *((unsigned int *) exec_ptr);
-		MOVEBY(unsigned int, 1);
+		POP(state->practise_max, exec_ptr, unsigned int);
 		state->practises = calloc(state->practise_max,
 					  sizeof(struct ntwt_practise));
 		POINTEDSTATE();
@@ -99,19 +216,14 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		struct ntwt_action *action;
 
 		++exec_ptr;
-		practise_id = *((unsigned int *) exec_ptr);
-		MOVEBY(unsigned int, 1);
-		action_package_location =
-			*((unsigned int *) exec_ptr);
-		MOVEBY(unsigned int, 1);
-		action_id = *((unsigned int *) exec_ptr);
-		MOVEBY(unsigned int, 1);
-		strength = *((double *) exec_ptr);
-		MOVEBY(double, 1);
-		can_happen = *((double *) exec_ptr);
-		MOVEBY(double, 1);
-		unsatisfied = *((double *) exec_ptr);
-		MOVEBY(double, 1);
+
+		POP(practise_id, exec_ptr, unsigned int);
+		POP(action_package_location, exec_ptr, unsigned int);
+		POP(action_id, exec_ptr, unsigned int);
+		POP(strength, exec_ptr, double);
+		POP(can_happen, exec_ptr, double);
+		POP(unsatisfied, exec_ptr, double);
+
 		prac = state->practises + practise_id;
 		action = (state->packages + action_package_location)
 			->actions + action_id;
@@ -124,11 +236,9 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		unsigned int action_id;
 
 		++exec_ptr;
-		action_package_location =
-			*((unsigned int *) exec_ptr);
-		MOVEBY(unsigned int, 1);
-		action_id = *((unsigned int *) exec_ptr);
-		MOVEBY(unsigned int, 1);
+		POP(action_package_location, exec_ptr, unsigned int);
+		POP(action_id, exec_ptr, unsigned int);
+
 		state->context->action =
 			(state->packages + action_package_location)
 			->actions + action_id;
@@ -137,19 +247,19 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 	STATE (strength) {
 		++exec_ptr;
 		ntwt_practise_strength(state->context, *((double *) exec_ptr));
-		MOVEBY(double, 1);
+		MOVEBY(exec_ptr, double, 1);
 		POINTEDSTATE();
 	}
 	STATE (can_happen) {
 		++exec_ptr;
 		ntwt_practise_can_happen(state->context, *((double *) exec_ptr));
-		MOVEBY(double, 1);
+		MOVEBY(exec_ptr, double, 1);
 		POINTEDSTATE();
 	}
 	STATE (unsatisfied) {
 		++exec_ptr;
 		ntwt_practise_unsatisfied(state->context, *((double *) exec_ptr));
-		MOVEBY(double, 1);
+		MOVEBY(exec_ptr, double, 1);
 		POINTEDSTATE();
 	}
 	STATE (run) {
@@ -163,116 +273,7 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		NEXTSTATE();
 	}
 	STATE (save) {
-		remove("state.ilk");
-		FILE *image = fopen("state.ilk", "ab");
-		/* char test_save[] = { TEST, CONTEXT, 0, RUN, END}; */
-		/* fwrite(&test_save, sizeof(char), sizeof(test_save), image); */
-		/* static const char null_terminator[1] = { '\0' }; */
-		char c_op[1];
-		/* double d_op[1]; */
-
-		c_op[0] = NTWT_OP_TEST;
-		fwrite(c_op, 1, 1, image);
-
-		/* Writes packages and their actions */
-		c_op[0] = NTWT_OP_INIT_PACK;
-		fwrite(c_op, sizeof(char), 1, image);
-		fwrite(&state->package_max,
-		       sizeof(unsigned int), 1, image);
-		unsigned int i;
-		struct ntwt_package *pack;
-		for (i = 1; i != state->package_max; ++i) {
-			pack = state->packages + i;
-			if (!pack->loaded)
-				continue;
-			unsigned int pack_args[2] = {
-				[0] = pack->package_num,
-				[1] = pack->action_max
-			};
-			c_op[0] = NTWT_OP_LOAD_PACK;
-			fwrite(c_op, sizeof(char), 1, image);
-			fwrite(pack_args, sizeof(unsigned int), 2, image);
-			fwrite(pack->location, sizeof(char),
-			       strlen(pack->location) + 1, image);
-			/* fwrite(null_terminator, sizeof(char), 1, image); */
-
-			unsigned int j;
-			struct ntwt_action *action;
-			for (j = 0; j != pack->action_max; ++j) {
-				action = pack->actions + j;
-				if (!action->loaded)
-					continue;
-				unsigned int action_args[2] = {
-					[0] = action->package_num,
-					[1] = action->id
-				};
-				c_op[0] = NTWT_OP_LOAD_ACTION;
-				fwrite(c_op, sizeof(char), 1, image);
-				fwrite(action_args, sizeof(unsigned int),
-				       2, image);
-				fwrite(action->name, sizeof(char),
-				       strlen(action->name) + 1, image);
-			}
-		}
-
-		/* Writes practises and gives them actions */
-		struct ntwt_practise *prac;
-		c_op[0] = NTWT_OP_LOAD_PRAC;
-		for (i = 0; i != state->practise_max; ++i) {
-			printf("hello, %u\n", i);
-			prac = state->practises + i;
-			if (!prac->loaded)
-				continue;
-			printf("loaded");
-			fwrite(c_op, sizeof(char), 1, image);
-			unsigned int int_args[3] = {
-				[0] = i,
-				[1] = prac->action->package_num,
-				[2] = prac->action->id
-			};
-			double double_args[3] = {
-				[0] = prac->strength,
-				[1] = prac->can_happen,
-				[2] = prac->unsatisfied
-			};
-			fwrite(int_args, sizeof(unsigned int),
-			       3, image);
-			fwrite(double_args, sizeof(double), 3, image);
-		}
-		/* c_op[0] = NTWT_OP_TEST; */
-		/* fwrite(c_op, 1, 1, image); */
-
-		c_op[0] = NTWT_OP_CONTEXT;
-		fwrite(&c_op[0], 1, 1, image);
-
-		c_op[0] = 0;
-		fwrite(c_op, 1, 1, image);
-
-		/* c_op[0] = NTWT_OP_ACTION; */
-		/* fwrite(&c_op[0], 1, 1, image); */
-
-		/* c_op[0] = NTWT_OP_STRENGTH; */
-		/* fwrite(c_op, sizeof(char), 1, image); */
-		/* d_op[0] = state->context->strength; */
-		/* fwrite(d_op, sizeof(double), 1, image); */
-
-		/* c_op[0] = NTWT_OP_CAN_HAPPEN; */
-		/* fwrite(c_op, sizeof(char), 1, image); */
-		/* d_op[0] = state->context->can_happen; */
-		/* fwrite(d_op, sizeof(double), 1, image); */
-
-		/* c_op[0] = NTWT_OP_UNSATISFIED; */
-		/* fwrite(c_op, sizeof(char), 1, image); */
-		/* d_op[0] = state->context->unsatisfied; */
-		/* fwrite(d_op, sizeof(double), 1, image); */
-
-		c_op[0] = NTWT_OP_RUN;
-		fwrite(c_op, 1, 1, image);
-
-		c_op[0] = NTWT_OP_END;
-		fwrite(c_op, 1, 1, image);
-
-		fclose(image);
+		save(state);
 		NEXTSTATE();
 	}
 	/* package_max */
@@ -284,7 +285,7 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 			 sizeof(struct ntwt_package));
 		*state->packages = ntwt_std_package;
 		state->package_ptr = 1;
-		MOVEBY(unsigned int, 1);
+		MOVEBY(exec_ptr, unsigned int, 1);
 		printf("wot?!\n");
 
 		/* For testing only */
@@ -299,10 +300,8 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		unsigned int action_max;
 
 		++exec_ptr;
-		package_num = *((unsigned int *) exec_ptr);
-		MOVEBY(unsigned int, 1);
-		action_max = *((unsigned int *) exec_ptr);
-		MOVEBY(unsigned int, 1);
+		POP(package_num, exec_ptr, unsigned int);
+		POP(action_max, exec_ptr, unsigned int);
 
 	        ntwt_instance_load_package(state,
 					   package_num,
@@ -319,10 +318,10 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		unsigned int package_num, id;
 
 		++exec_ptr;
-		package_num = *((unsigned int *) exec_ptr);
-		MOVEBY(unsigned int, 1);
-		id = *((unsigned int *) exec_ptr);
-		MOVEBY(unsigned int, 1);
+
+		POP(package_num, exec_ptr, unsigned int);
+		POP(id, exec_ptr, unsigned int);
+
 	        ntwt_package_load_action(state->packages + package_num,
 					 id, exec_ptr);
 		exec_ptr += strlen(exec_ptr);
