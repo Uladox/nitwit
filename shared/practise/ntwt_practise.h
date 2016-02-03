@@ -56,11 +56,11 @@ void ntwt_practise_load(struct ntwt_practise *p,
 void ntwt_instance_load_package(struct ntwt_instance *instance,
 				unsigned int package_num,
 				unsigned int action_max,
-				const char *location);
+				char *location);
 
 void ntwt_package_load_action(struct ntwt_package *package,
 			      unsigned int id,
-			      const char *action_name);
+			      char *action_name);
 
 void ntwt_practise_run(struct ntwt_practise *p);
 

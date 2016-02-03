@@ -78,7 +78,7 @@ struct ntwt_action *ntwt_action_new(char *name,
 void ntwt_instance_load_package(struct ntwt_instance *instance,
 				unsigned int package_num,
 				unsigned int action_max,
-				const char *location)
+				char *location)
 {
 	struct ntwt_package *package;
 
@@ -96,8 +96,9 @@ void ntwt_instance_load_package(struct ntwt_instance *instance,
 		exit(1);
 	}
 	package->package_num = package_num;
-	package->location = malloc(strlen(location) + 1);
-	strcpy(package->location, location);
+	/* package->location = malloc(strlen(location) + 1); */
+	/* strcpy(package->location, location); */
+	package->location = location;
 	package->actions = calloc(action_max, sizeof(struct ntwt_action));
 	package->action_max = action_max;
 	package->action_ptr = 0;
@@ -108,7 +109,7 @@ void ntwt_instance_load_package(struct ntwt_instance *instance,
 
 void ntwt_package_load_action(struct ntwt_package *package,
 			      unsigned int id,
-			      const char *action_name)
+			      char *action_name)
 {
 	struct ntwt_action *action;
 	char *error;
@@ -128,8 +129,9 @@ void ntwt_package_load_action(struct ntwt_package *package,
 	}
 	action->package_num = package->package_num;
 	action->id = id;
-	action->name = malloc(strlen(action_name) + 1);
-	strcpy(action->name, action_name);
+	action->name = action_name;
+	/* action->name = malloc(strlen(action_name) + 1); */
+	/* strcpy(action->name, action_name); */
 	if (id >= package->action_ptr)
 		package->action_ptr = id + 1;
 	action->loaded = 1;
