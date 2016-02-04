@@ -27,6 +27,7 @@ STATE (init_prac) {
 	++exec_ptr;
 	/* unsigned int */
 	POPSET(state->practise_max, exec_ptr);
+
 	state->practises = calloc(state->practise_max,
 				  sizeof(struct ntwt_practise));
 	POINTEDSTATE();
@@ -35,8 +36,7 @@ STATE (init_prac) {
 /* practise_id, action_package_location, action_id,
    strength, can_happen, unsatisfied */
 STATE (load_prac) {
-	unsigned int practise_id;
-	unsigned int action_package_location, action_id;
+	unsigned int practise_id, action_package_location, action_id;
 	double strength, can_happen, unsatisfied;
 	struct ntwt_practise *prac;
 	struct ntwt_action *action;
@@ -59,8 +59,7 @@ STATE (load_prac) {
 }
 
 STATE (action) {
-	unsigned int action_package_location;
-	unsigned int action_id;
+	unsigned int action_package_location, action_id;
 
 	++exec_ptr;
 	POPSET(action_package_location, exec_ptr);
@@ -75,21 +74,21 @@ STATE (action) {
 STATE (strength) {
 	++exec_ptr;
 	ntwt_practise_strength(state->context, POP(double, exec_ptr));
-	MOVEBY(exec_ptr, double, 1);
+	/* MOVEBY(exec_ptr, double, 1); */
 	POINTEDSTATE();
 }
 
 STATE (can_happen) {
 	++exec_ptr;
 	ntwt_practise_can_happen(state->context, POP(double, exec_ptr));
-	MOVEBY(exec_ptr, double, 1);
+	/* MOVEBY(exec_ptr, double, 1); */
 	POINTEDSTATE();
 }
 
 STATE (unsatisfied) {
 	++exec_ptr;
 	ntwt_practise_unsatisfied(state->context, POP(double, exec_ptr));
-	MOVEBY(exec_ptr, double, 1);
+	/* MOVEBY(exec_ptr, double, 1); */
 	POINTEDSTATE();
 }
 
@@ -113,7 +112,9 @@ STATE (save) {
 /* package_max */
 STATE (init_pack) {
 	++exec_ptr;
+
 	POPSET(state->package_max, exec_ptr);
+
 	++state->package_max;
 	 /* = *((unsigned int *) exec_ptr) + 1; */
 	state->packages = calloc

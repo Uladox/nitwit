@@ -20,6 +20,9 @@ enum { NTWT_OP_READ, NTWT_OP_END, NTWT_OP_CONTEXT, NTWT_OP_TEST,
        NTWT_OP_INIT_PACK, NTWT_OP_LOAD_PACK,
        NTWT_OP_LOAD_ACTION };
 
+enum { NTWT_ARG_CHAR, NTWT_ARG_UINT, NTWT_ARG_INT, NTWT_ARG_DOUBLE,
+       NTWT_ARG_STRING };
+
 struct ntwt_instance {
 	unsigned int package_ptr;
 	unsigned int package_max;
@@ -31,6 +34,8 @@ struct ntwt_instance {
 	struct ntwt_practise *practises;
 	pthread_t awareness;
 };
+
+extern const unsigned int *restrict const ntwt_op_args[];
 
 void ntwt_interprete(struct ntwt_instance *state, const char code[]);
 
