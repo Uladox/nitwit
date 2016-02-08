@@ -16,6 +16,7 @@ struct ntwt_lex_info {
 	unsigned int lexlen;
 	unsigned int lineno;
 	unsigned int token;
+	unsigned int offset;
 };
 
 struct ntwt_asm_tree *statements(char *code);

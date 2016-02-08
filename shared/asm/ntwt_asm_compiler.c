@@ -9,9 +9,7 @@ void command(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info);
 
 void term(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info);
 
-unsigned int lex_string(/* char *current, char *lexme, */
-			/* unsigned int *lexlen, unsigned int *lineno */
-	struct ntwt_lex_info *info, char *current)
+unsigned int lex_string(struct ntwt_lex_info *info, char *current)
 {
 	int backslashed = 0;
 	while (1) {
@@ -25,6 +23,7 @@ unsigned int lex_string(/* char *current, char *lexme, */
 		case '\n': ++info->lineno; backslashed = 0; break;
 		case '\"': if (!backslashed) {
 				info->lexlen = current - info->lexme;
+				info->offset = 1;
 			        return NTWT_STRING;
 			}
 		default: backslashed = 0; break;
@@ -32,9 +31,7 @@ unsigned int lex_string(/* char *current, char *lexme, */
 	}
 }
 
-unsigned int lex_num(/* char *current, char *lexme, */
-		     /* unsigned int *lexlen, unsigned int *lineno */
-	struct ntwt_lex_info *info, char *current)
+unsigned int lex_num(struct ntwt_lex_info *info, char *current)
 {
 	unsigned int num_type = NTWT_UINT;
 	int period = 0;
@@ -67,12 +64,10 @@ unsigned int lex_num(/* char *current, char *lexme, */
 	}
 }
 
-unsigned int lex(/* char **lexme, unsigned int *lexlen, */
-		 /* unsigned int *lineno, unsigned int *lexprev */
-	struct ntwt_lex_info *info)
+unsigned int lex(struct ntwt_lex_info *info)
 {
 	char *current = info->lexme;
-	current += info->lexlen;
+	current += info->lexlen + info->offset;
 
 	while (isspace(*current)) {
 		if (*current == '\n')
@@ -81,6 +76,7 @@ unsigned int lex(/* char **lexme, unsigned int *lexlen, */
 	}
 
 	info->lexlen = 1;
+	info->offset = 0;
 	info->lexme = current;
 	switch (*current) {
 	case '\0': return info->token = NTWT_EOI;
@@ -114,17 +110,6 @@ static void advance(struct ntwt_lex_info *info)
 	lex(info);
 }
 
-/* struct ntwt_asm_tree *ntwt_asm_tree_node_new(unsigned int type, unsigned int value) */
-/* { */
-/* struct ntwt_asm_tree { */
-/* 	unsigned int type; */
-/* 	struct ntwt_asm_tree *next; */
-/* 	struct ntwt_asm_tree *branch; */
-/* 	unsigned int value; */
-
-/* }; */
-/* } */
-
 struct ntwt_asm_tree *statements(char *code)
 {
 	struct ntwt_lex_info info = {
@@ -136,22 +121,22 @@ struct ntwt_asm_tree *statements(char *code)
 	struct ntwt_asm_tree *root = malloc(sizeof(struct ntwt_asm_tree));
 
 	struct ntwt_asm_tree *tree = root;
-	tree->type = NTWT_COMMAND;
-	tree->next = NULL;
-	tree->contents.branch = malloc(sizeof(struct ntwt_asm_tree));
 
 	advance(&info);
-	command(tree->contents.branch, &info);
-	if (match(&info, NTWT_SEMICOLON)) {
-		advance(&info);
-	} else {
+	command(tree, &info);
+	if (!match(&info, NTWT_SEMICOLON)) {
 		fprintf(stderr, "Error: Inserting missing semicolon "
 			"on line %u\n", info.lineno);
 		exit(1);
+	} else {
+		advance(&info);
 	}
 
 	/* printf("token: %u\n", info.token); */
         while (!match(&info, NTWT_EOI)) {
+		tree->next = malloc(sizeof(struct ntwt_asm_tree));
+		tree = tree->next;
+		command(tree, &info);
 		if (match(&info, NTWT_SEMICOLON)) {
 			advance(&info);
 		} else {
@@ -159,40 +144,41 @@ struct ntwt_asm_tree *statements(char *code)
 				"on line %u\n", info.lineno);
 			exit(1);
 		}
-
-		tree->next = malloc(sizeof(struct ntwt_asm_tree));
-		tree = tree->next;
-
-		tree->type = NTWT_COMMAND;
-		tree->next = NULL;
-		tree->contents.branch = malloc(sizeof(struct ntwt_asm_tree));
-		command(tree->contents.branch, &info);
 	}
 
 	return root;
-	/* for(; !match(&info, NTWT_EOI);  */
 	/* printf("token: %u, %u, %.*s\n", a.token, a.lexlen, a.lexlen, a.lexme); */
 }
 
 void command(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info)
 {
-	term(tree, info);
+	struct ntwt_asm_tree *branch;
+
+	tree->type = NTWT_COMMAND;
+	tree->next = NULL;
+	tree->contents.branch = malloc(sizeof(struct ntwt_asm_tree));
+
+	branch = tree->contents.branch;
+	term(branch, info);
 	advance(info);
 	while (!match(info, NTWT_SEMICOLON)) {
 		if (match(info, NTWT_EOI)) {
-			printf("Error: end of input\n");
+			printf("Error: end of input on line: %u\n",
+				info->lineno);
 			exit(1);
 		}
-		tree->next = malloc(sizeof(struct ntwt_asm_tree));
-		tree = tree->next;
-		term(tree, info);
-		tree->next = NULL;
+	        branch->next = malloc(sizeof(struct ntwt_asm_tree));
+		branch = branch->next;
+		branch->next = NULL;
+		term(branch, info);
 		advance(info);
 	}
 }
 
 void term(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info)
 {
+	/* printf("token: %u, %u, %.*s\n", info->token, info->lexlen, */
+	/*        info->lexlen, info->lexme); */
 	tree->type = info->token;
 	if (match(info, NTWT_UINT)) {
 		tree->contents.integer = strtoul(info->lexme, NULL, 0);
@@ -209,8 +195,10 @@ void term(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info)
 			fprintf(stderr, "Error: unrecognized op code\n");
 			exit(1);
 		}
+	} else {
+		fprintf(stderr, "Error: unrecognized token\n");
+		exit(1);
 	}
-
 }
 
 /* void ntwt_bytecode_write(const char *code) */
