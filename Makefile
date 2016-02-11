@@ -38,7 +38,7 @@ release: $(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client
 
 define make-execs
 $(DEBUG_PATH)/$(1): $(addprefix $(DEBUG_PATH)/,$(2)) $(4)
-	gcc -std=gnu99 -g     -Wall -Werror $$^ -o $$@ $(3)
+	gcc -std=gnu99 -g -pg -Wall -Werror $$^ -o $$@ $(3)
 $(RELEASE_PATH)/$(1): $(addprefix $(RELEASE_PATH)/,$(2)) $(4)
 	gcc -std=gnu99 -Ofast -Wall -Werror $$^ -o $$@ $(3)
 endef
@@ -51,7 +51,7 @@ define make-objs
 $(eval x = $(patsubst %.c, %.o, $(notdir $(1))))
 $(patsubst %.c, $(DEBUG_PATH)/%.o, $(notdir $(1))): $(1) $($(x)) \
 	$(wildcard $(patsubst %.c, %.h, $(1)))
-	gcc -std=gnu99 -g     -c -Wall -Werror $$< -o $$@
+	gcc -std=gnu99 -g -pg -c -Wall -Werror $$< -o $$@
 	echo $(x)
 $(patsubst %.c, $(RELEASE_PATH)/%.o, $(notdir $(1))): $(1) $($(x)) \
 	$(wildcard $(patsubst %.c, %.h, $(1)))
