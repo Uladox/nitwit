@@ -9,7 +9,7 @@ void command(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info);
 
 void term(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info);
 
-unsigned int lex_string(struct ntwt_lex_info *info, char *current)
+void lex_string(struct ntwt_lex_info *info, char *current)
 {
 	int backslashed = 0;
 	while (1) {
@@ -19,43 +19,57 @@ unsigned int lex_string(struct ntwt_lex_info *info, char *current)
 			fprintf(stderr, "Error: string has no "
 				"ending quote on line %u\n", info->lineno);
 			exit(1);
-		case '\\': backslashed = !backslashed; break;
-		case '\n': ++info->lineno; backslashed = 0; break;
-		case '\"': if (!backslashed) {
+		case '\\':
+			backslashed = !backslashed;
+			break;
+		case '\n':
+			++info->lineno; backslashed = 0;
+			break;
+		case '\"':
+			if (!backslashed) {
 				info->lexlen = current - info->lexme;
 				info->offset = 1;
-			        return NTWT_STRING;
+			        info->token =  NTWT_STRING;
+				return;
 			}
-		default: backslashed = 0; break;
+		default:
+			backslashed = 0;
+			break;
 		}
 	}
 }
 
-unsigned int lex_num(struct ntwt_lex_info *info, char *current)
+void lex_num(struct ntwt_lex_info *info, char *current)
 {
 	unsigned int num_type = NTWT_UINT;
 	int period = 0;
 	while (1) {
 		++current;
-		if (isdigit(*current)) {
-		        continue;
-		} else if (isspace(*current) || *current == ';') {
-			if (*current == '\n')
-				++info->lineno;
+		switch (*current) {
+		case '0' ... '9' : continue;
+		case '\n' : ++info->lineno;
+		case ' '  :
+		case '\t' :
+		case '\v' :
+		case '\f' :
+		case '\r' :
+		case ';'  :
 			info->lexlen = current - info->lexme;
-			return num_type;
-		} else if (*current == '.') {
+			info->token = num_type;
+			return;
+		case '.' :
 			if (period) {
 				fprintf(stderr, "Error: to many '.' in "
 					"number on line %u\n", info->lineno);
 				exit(1);
 			}
 			num_type = NTWT_DOUBLE;
-		} else if (*current == '\0') {
+			break;
+		case '\0' :
 			fprintf(stderr, "Error: unexpected end of input "
 				"on line %u\n", info->lineno);
 			exit(1);
-		} else  {
+		default :
 			fprintf(stderr, "Error: invalid char '%c' in "
 				"number on line %u\n", *current,
 				info->lineno);
@@ -64,7 +78,17 @@ unsigned int lex_num(struct ntwt_lex_info *info, char *current)
 	}
 }
 
-unsigned int lex(struct ntwt_lex_info *info)
+void lex_op_code(struct ntwt_lex_info *info, char *current)
+{
+	while(!isspace(*current) && *current != ';') {
+		++current;
+	}
+
+	info->lexlen = current - info->lexme;
+        info->token = NTWT_OP_CODE;
+}
+
+void lex(struct ntwt_lex_info *info)
 {
 	char *current = info->lexme;
 	current += info->lexlen + info->offset;
@@ -78,27 +102,40 @@ unsigned int lex(struct ntwt_lex_info *info)
 	info->lexlen = 1;
 	info->offset = 0;
 	info->lexme = current;
+
 	switch (*current) {
-	case '\0': return info->token = NTWT_EOI;
-	case ';' : return info->token = NTWT_SEMICOLON;
-	case '*' : ++info->lexme; goto op_code;
-	case '"' : ++info->lexme;
-		return info->token = lex_string(info, current);
-	case '0' ... '9': return info->token = lex_num(info, current);
-	default: break;
+	case '\0':
+		info->token = NTWT_EOI;
+		break;
+	case ';' :
+		info->token = NTWT_SEMICOLON;
+	        break;
+	case '"' :
+		++info->lexme; lex_string(info, current);
+	        break;
+	case '0' ... '9':
+		lex_num(info, current);
+		break;
+	case '*' :
+		/* Assumes an op code after '*' */
+		++info->lexme;
+		lex_op_code(info, current);
+		break;
+	default  :
+		/* Assumes an  op code after ';' */
+		if (info->token != NTWT_SEMICOLON) {
+			fprintf(stderr,
+				"Error: invalid argument on line %u, if you "
+				"want an op_code, put '*' before it.\n",
+				info->lineno);
+			exit(1);
+		}
+		lex_op_code(info, current);
+	        break;
 	}
-	if (info->token != NTWT_SEMICOLON) {
-		fprintf(stderr, "Error: invalid argument on line %u, if you "
-			"want an op_code, put '*' before it.\n", info->lineno);
-		exit(1);
-	}
-op_code:
-	while(!isspace(*current) && *current != ';') {
-		++current;
-	}
-	info->lexlen = current - info->lexme;
-	return info->token = NTWT_OP_CODE;
 }
+
+
 
 static int match(struct ntwt_lex_info *info, unsigned int token)
 {
@@ -177,31 +214,50 @@ void command(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info)
 
 void term(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info)
 {
-	/* printf("token: %u, %u, %.*s\n", info->token, info->lexlen, */
-	/*        info->lexlen, info->lexme); */
-	tree->type = info->token;
-	if (match(info, NTWT_UINT)) {
+	switch (tree->type = info->token) {
+	case NTWT_UINT:
 		tree->contents.integer = strtoul(info->lexme, NULL, 0);
-	} else if (match(info, NTWT_DOUBLE)) {
+		break;
+	case NTWT_DOUBLE:
 		tree->contents.decimal = strtod(info->lexme, NULL);
-	} else if (match(info, NTWT_STRING)) {
+		break;
+	case NTWT_STRING:
 		tree->contents.string = malloc(info->lexlen + 1);
 		strncpy(tree->contents.string, info->lexme, info->lexlen);
-	} else if (match(info, NTWT_OP_CODE)) {
-		char op_code;
+		break;
+	case NTWT_OP_CODE:
 		if (!strncmp(info->lexme, "TEST", info->lexlen))
 			tree->contents.op_code = NTWT_OP_TEST;
 		else {
 			fprintf(stderr, "Error: unrecognized op code\n");
 			exit(1);
 		}
-	} else {
+		break;
+	default:
 		fprintf(stderr, "Error: unrecognized token\n");
 		exit(1);
 	}
 }
 
-/* void ntwt_bytecode_write(const char *code) */
+/* void ntwt_write_tree(struct ntwt_write_tree *tree, FILE *image) */
+/* { */
+/* 	switch(tree->type) { */
+/* 	case NTWT_OP_CODE: */
+/* 		fwrite(&tree->contents.op_code, sizeof(char), 1, image); */
+/* 		break; */
+/* 	case NTWT_UINT: */
+/* 		fwrite(&tree->contents.integer, sizeof(unsigned int), 1, image); */
+/* 		break; */
+/* 	case NTWT_DOUBLE: */
+/* 		fwrite(tree->contents.string, sizeof(char), */
+/* 		       strlen(tree->contents.string) + 1, image); */
+/* 		break; */
+
+
+/* 	} */
+/* } */
+
+/* void ntwt_bytecode_write(struct ntwt_asm_tree *tree) */
 /* { */
 /* 	remove("state.ilk"); */
 /* 	FILE *image = fopen("state.ilk", "ab"); */

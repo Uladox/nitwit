@@ -1,12 +1,9 @@
 #define STATE(x)      s_##x :
 #define GOTOSTATE(x)  goto s_##x
-#define NEXTSTATE()					\
-	do {						\
-		++exec_ptr;				\
-		goto *dtable[(uint8_t) *exec_ptr];	\
-	} while(0)
-#define POINTEDSTATE()				\
-	goto *dtable[(uint8_t) *exec_ptr]
+#define NEXTSTATE(POINTER)			\
+	goto *dtable[(uint8_t) *++(POINTER)];
+#define POINTEDSTATE(POINTER)			\
+	goto *dtable[(uint8_t) *(POINTER)]
 #define MOVEBY(POINTER, TYPE, AMOUNT)				\
 	POINTER = ((char *) (((TYPE *) POINTER) + (AMOUNT)))
 #define COPY(VARIABLE, POINTER)		\

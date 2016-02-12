@@ -1,5 +1,5 @@
 STATE (read) {
-	NEXTSTATE();
+	NEXTSTATE(exec_ptr);
 }
 
 STATE (end) {
@@ -9,18 +9,18 @@ STATE (end) {
 STATE (context) {
 	++exec_ptr;
 	state->context = state->practises + *exec_ptr;
-	NEXTSTATE();
+	NEXTSTATE(exec_ptr);
 }
 
 STATE (test) {
 	printf("this is a test\n");
-	NEXTSTATE();
+	NEXTSTATE(exec_ptr);
 }
 
 STATE (awake) {
 	pthread_create(&state->awareness, NULL,
 		       threaded_awareness_run, NULL);
-	NEXTSTATE();
+	NEXTSTATE(exec_ptr);
 }
 
 STATE (init_prac) {
@@ -30,7 +30,7 @@ STATE (init_prac) {
 
 	state->practises = calloc(state->practise_max,
 				  sizeof(struct ntwt_practise));
-	POINTEDSTATE();
+	POINTEDSTATE(exec_ptr);
 }
 
 /* practise_id, action_package_location, action_id,
@@ -55,7 +55,7 @@ STATE (load_prac) {
 		->actions + action_id;
 	ntwt_practise_load(prac, action, can_happen, strength,
 			   unsatisfied);
-	POINTEDSTATE();
+	POINTEDSTATE(exec_ptr);
 }
 
 STATE (action) {
@@ -68,45 +68,45 @@ STATE (action) {
 	state->context->action =
 		(state->packages + action_package_location)
 		->actions + action_id;
-	POINTEDSTATE();
+	POINTEDSTATE(exec_ptr);
 }
 
 STATE (strength) {
 	++exec_ptr;
 	ntwt_practise_strength(state->context, POP(double, exec_ptr));
 	/* MOVEBY(exec_ptr, double, 1); */
-	POINTEDSTATE();
+	POINTEDSTATE(exec_ptr);
 }
 
 STATE (can_happen) {
 	++exec_ptr;
 	ntwt_practise_can_happen(state->context, POP(double, exec_ptr));
 	/* MOVEBY(exec_ptr, double, 1); */
-	POINTEDSTATE();
+	POINTEDSTATE(exec_ptr);
 }
 
 STATE (unsatisfied) {
 	++exec_ptr;
 	ntwt_practise_unsatisfied(state->context, POP(double, exec_ptr));
 	/* MOVEBY(exec_ptr, double, 1); */
-	POINTEDSTATE();
+	POINTEDSTATE(exec_ptr);
 }
 
 STATE (run) {
 	pthread_create(&state->context->thread,
 		       NULL, threaded_practise_run,
 		       (void *) state->context);
-	NEXTSTATE();
+	NEXTSTATE(exec_ptr);
 }
 
 STATE (stronger) {
 	ntwt_practise_stronger(state->context, 0.1);
-	NEXTSTATE();
+	NEXTSTATE(exec_ptr);
 }
 
 STATE (save) {
 	save(state);
-	NEXTSTATE();
+	NEXTSTATE(exec_ptr);
 }
 
 /* package_max */
@@ -129,7 +129,7 @@ STATE (init_pack) {
 	/* state->practises->can_happen = 0.5; */
 	/* state->practises->strength = 0.5; */
 	/* state->practises->unsatisfied = 0.5; */
-	POINTEDSTATE();
+	POINTEDSTATE(exec_ptr);
 }
 
 /* package_num, action_max, location, */
@@ -150,7 +150,7 @@ STATE (load_pack) {
 				   action_max,
 				   location);
 
-	POINTEDSTATE();
+	POINTEDSTATE(exec_ptr);
 }
 
 /* package_num, id, action_name */
@@ -167,5 +167,5 @@ STATE (load_action) {
 
 	ntwt_package_load_action(state->packages + package_num,
 				 id, action_name);
-	POINTEDSTATE();
+	POINTEDSTATE(exec_ptr);
 }
