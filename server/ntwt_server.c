@@ -44,7 +44,9 @@ void *echo_socket(void *input)
 
         while (!ntwt_connection_end_check(sock)) {
 		if (ntwt_connection_read
-		    (sock, str, &size, &message_size) == 1) {
+		    (sock, str, &size, &message_size, 1) == 1) {
+			printf("message size %u\n", message_size);
+			(*str)[message_size] = NTWT_OP_END;
 			ntwt_interprete(&state, *str);
 		}
         }
@@ -97,6 +99,7 @@ int main(int argc, char *args[])
 	fread(image_code, image_size, sizeof(char), image);
 	fclose(image);
 
+	image_code[image_size] = NTWT_OP_END;
 	ntwt_interprete(&state, image_code);
 	free(image_code);
 

@@ -124,11 +124,11 @@ void ntwt_connection_kill(struct ntwt_connection *user_socket)
 
 int ntwt_connection_read(struct ntwt_connection *sock,
 			 char **str, unsigned int *old_size,
-			 int *message_size)
+			 int *message_size, unsigned int offset)
 {
-	/* int n; */
 	int retval;
 	unsigned int size = 0;
+	unsigned int offset_size = offset;
 
 	pthread_mutex_lock(&sock->done_mutex);
 
@@ -143,11 +143,12 @@ int ntwt_connection_read(struct ntwt_connection *sock,
 	if (retval == 1) {
 
 		recv(sock->sd, &size, sizeof(unsigned int), 0);
+		offset_size += size;
 		/* printf("I got the number: %u\n", size); */
-		if (size > *old_size) {
+		if (offset_size > *old_size) {
 			free(*str);
-			*str = malloc(size);
-			*old_size = size;
+			*str = malloc(offset_size);
+			*old_size = offset_size;
 		}
 
 		*message_size = recv(sock->sd, *str, size, 0);

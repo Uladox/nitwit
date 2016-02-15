@@ -1,4 +1,5 @@
 STATE (read) {
+	printf("This should never be read!\n");
 	NEXTSTATE(exec_ptr);
 }
 
@@ -14,6 +15,7 @@ STATE (context) {
 
 STATE (test) {
 	printf("this is a test\n");
+	/* getchar(); */
 	NEXTSTATE(exec_ptr);
 }
 

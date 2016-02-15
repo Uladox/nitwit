@@ -48,7 +48,7 @@ void ntwt_connection_kill(struct ntwt_connection *user_socket);
 
 int ntwt_connection_read(struct ntwt_connection *sock,
 			 char **str, unsigned int *old_size,
-			 int *message_size);
+			 int *message_size, unsigned int offset);
 
 void ntwt_connection_send(struct ntwt_connection *sock,
 			  char *str, unsigned int size);
