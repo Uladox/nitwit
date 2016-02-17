@@ -58,8 +58,8 @@ struct ntwt_practise *ntwt_practise_new(struct ntwt_action *action,
 }
 
 struct ntwt_action *ntwt_action_new(char *name,
-				    unsigned int package_num,
-				    unsigned int id,
+				    uint32_t package_num,
+				    uint32_t id,
 				    void (*funct)(double *,
 						  double *,
 						  double *))
@@ -76,8 +76,8 @@ struct ntwt_action *ntwt_action_new(char *name,
 }
 
 void ntwt_instance_load_package(struct ntwt_instance *instance,
-				unsigned int package_num,
-				unsigned int action_max,
+				uint32_t package_num,
+				uint32_t action_max,
 				char *location)
 {
 	struct ntwt_package *package;
@@ -108,7 +108,7 @@ void ntwt_instance_load_package(struct ntwt_instance *instance,
 }
 
 void ntwt_package_load_action(struct ntwt_package *package,
-			      unsigned int id,
+			      uint32_t id,
 			      char *action_name)
 {
 	struct ntwt_action *action;
