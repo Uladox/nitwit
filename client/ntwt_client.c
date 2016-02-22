@@ -61,30 +61,28 @@ int main(void)
 	unsigned int size = 256;
         unsigned int message_size;
 	unsigned int input_size;
-	char **str;
+	char *str;
 	/* int end = 0; */
 
-	str = malloc(sizeof(char *));
-	*str = malloc(size);
+	str = malloc(size);
 
 	sock = ntwt_connection_connect(path);
 	while (!ntwt_connection_end_check(sock)) {
 	        printf("> ");
-		fgets(*str, 100, stdin);
+		fgets(str, 100, stdin);
 		/* For C-d */
 		if (feof(stdin))
 			break;
-		input_size = strlen(*str);
+		input_size = strlen(str);
 		/* Replaces '\n' with '\0' */
-		(*str)[input_size - 1] = '\0';
-		ntwt_asm_program_bytecode(ntwt_asm_statements(*str),
-					  str, &size, &message_size);
+		(str)[input_size - 1] = '\0';
+		ntwt_asm_program_bytecode(ntwt_asm_statements(str),
+					  &str, &size, &message_size);
 		ntwt_connection_send(sock, (char *) &message_size,
 				     sizeof(unsigned int));
-		ntwt_connection_send(sock, *str, message_size);
+		ntwt_connection_send(sock, str, message_size);
 	}
 	putchar('\n');
-	free(*str);
 	free(str);
 	ntwt_connection_free(sock);
 

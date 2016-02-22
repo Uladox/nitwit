@@ -47,7 +47,7 @@ struct ntwt_practise *ntwt_practise_new(struct ntwt_action *action,
 {
 	struct ntwt_practise *p;
 
-	p = malloc(sizeof(struct ntwt_practise));
+	p = malloc(sizeof(*p));
 	p->action = action;
 	p->can_happen = can_happen;
 	p->strength = strength;
@@ -66,7 +66,7 @@ struct ntwt_action *ntwt_action_new(char *name,
 {
 	struct ntwt_action *action;
 
-	action = malloc(sizeof(struct ntwt_action));
+	action = malloc(sizeof(*action));
 	action->name = name;
 	action->package_num = package_num;
 	action->id = id;
@@ -99,7 +99,7 @@ void ntwt_instance_load_package(struct ntwt_instance *instance,
 	/* package->location = malloc(strlen(location) + 1); */
 	/* strcpy(package->location, location); */
 	package->location = location;
-	package->actions = calloc(action_max, sizeof(struct ntwt_action));
+	package->actions = calloc(action_max, sizeof(*package->actions));
 	package->action_max = action_max;
 	package->action_ptr = 0;
 	if (package_num >= instance->package_ptr)

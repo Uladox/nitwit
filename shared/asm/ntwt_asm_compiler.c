@@ -154,10 +154,12 @@ struct ntwt_asm_tree *ntwt_asm_statements(char *code)
 		.lineno = 0,
 		.token = NTWT_SEMICOLON
 	};
-	struct ntwt_asm_tree *program = malloc(sizeof(struct ntwt_asm_tree));
-	program->contents.branch = malloc(sizeof(struct ntwt_asm_tree));
+	struct ntwt_asm_tree *program;
+	struct ntwt_asm_tree *tree;
+	program = malloc(sizeof(*program));
+	program->contents.branch = malloc(sizeof(*program->contents.branch));
 	program->size = 0;
-	struct ntwt_asm_tree *tree = program->contents.branch;
+        tree = program->contents.branch;
 
 	advance(&info);
 	command(tree, &info);
@@ -172,7 +174,7 @@ struct ntwt_asm_tree *ntwt_asm_statements(char *code)
 
 	/* printf("token: %u\n", info.token); */
         while (!match(&info, NTWT_EOI)) {
-		tree->next = malloc(sizeof(struct ntwt_asm_tree));
+		tree->next = malloc(sizeof(*tree->next));
 		tree = tree->next;
 		command(tree, &info);
 		if (match(&info, NTWT_SEMICOLON)) {
@@ -196,7 +198,7 @@ static void command(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info)
 	tree->type = NTWT_COMMAND;
 	tree->next = NULL;
 	tree->size = 0;
-	tree->contents.branch = malloc(sizeof(struct ntwt_asm_tree));
+	tree->contents.branch = malloc(sizeof(*tree->contents.branch));
 
 	branch = tree->contents.branch;
 
@@ -209,7 +211,7 @@ static void command(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info)
 				info->lineno);
 			exit(1);
 		}
-	        branch->next = malloc(sizeof(struct ntwt_asm_tree));
+	        branch->next = malloc(sizeof(*branch->next));
 		branch = branch->next;
 		term(branch, info);
 		tree->size += branch->size;
