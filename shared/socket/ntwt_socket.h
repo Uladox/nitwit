@@ -32,25 +32,25 @@ struct ntwt_connection {
 
 struct ntwt_connecter *ntwt_connecter_new(char *path);
 
-void ntwt_connecter_free(struct ntwt_connecter *sock);
+void ntwt_connecter_free(struct ntwt_connecter *cntr);
 
 struct ntwt_connection *ntwt_connection_connect(char *path);
 
-struct ntwt_connection *ntwt_connecter_accept(struct ntwt_connecter *sock);
+struct ntwt_connection *ntwt_connecter_accept(struct ntwt_connecter *cntr);
 
-void ntwt_connection_free(struct ntwt_connection *socket);
+void ntwt_connection_free(struct ntwt_connection *cntn);
 
-int ntwt_connection_end_check(struct ntwt_connection *socket);
+int ntwt_connection_end_check(struct ntwt_connection *cntn);
 
-void ntwt_connection_end_mutate(struct ntwt_connection *socket, int value);
+void ntwt_connection_end_mutate(struct ntwt_connection *cntn, int value);
 
-void ntwt_connection_kill(struct ntwt_connection *user_socket);
+void ntwt_connection_kill(struct ntwt_connection *cntn);
 
-int ntwt_connection_read(struct ntwt_connection *sock,
+int ntwt_connection_read(struct ntwt_connection *cntn,
 			 char **str, unsigned int *old_size,
 			 int *message_size, unsigned int offset);
 
-void ntwt_connection_send(struct ntwt_connection *sock,
+void ntwt_connection_send(struct ntwt_connection *cntn,
 			  char *str, unsigned int size);
 
 #endif

@@ -13,47 +13,6 @@
 
 #define SOCK_PATH "echo_socket"
 
-/* void compile(char *input, char *output) */
-/* { */
-/* 	for(; *input; ++input, ++output) */
-/* 	{ */
-/* 		switch(*input) { */
-/* 		case 'r': */
-/* 			*output = NTWT_OP_READ; */
-/* 			break; */
-/* 		case 'e': */
-/* 			*output = NTWT_OP_END; */
-/* 			break; */
-/* 		case 'c': */
-/* 			*output = NTWT_OP_CONTEXT; */
-/* 			break; */
-/* 		case 'u': */
-/* 			*output = NTWT_OP_RUN; */
-/* 			break; */
-/* 		case 't': */
-/* 			*output = NTWT_OP_TEST; */
-/* 			break; */
-/* 		case 'a': */
-/* 			*output = NTWT_OP_AWAKE; */
-/* 			break; */
-/* 		case 's': */
-/* 			*output = NTWT_OP_STRONGER; */
-/* 			break; */
-/* 		case '0': */
-/* 			*output = 0; */
-/* 			break; */
-/* 		case '!': */
-/* 			*output = NTWT_OP_SAVE; */
-/* 			break; */
-/* 		case '\n': */
-/* 			printf("oh no!\n"); */
-/* 			break; */
-/* 		default: */
-/* 			break; */
-/* 		} */
-/* 	} */
-/* } */
-
 int main(void)
 {
 	char *path = "echo_socket";
@@ -69,6 +28,7 @@ int main(void)
 	sock = ntwt_connection_connect(path);
 	while (!ntwt_connection_end_check(sock)) {
 	        printf("> ");
+		/* Replace this with getline or readline */
 		fgets(str, 100, stdin);
 		/* For C-d */
 		if (feof(stdin))

@@ -25,32 +25,30 @@ void *echo_socket(void *input)
 	struct ntwt_connection *sock;
 	unsigned int size = 256;
 	int message_size;
-	char **str;
+	char *str;
 
 	/* struct ntwt_practise p[100]; */
 	struct ntwt_instance state;
 
 	state.package_max = 1;
-	state.practises = calloc(100, sizeof(struct ntwt_practise));
+	state.practises = calloc(100, sizeof(*state.practises));
 	state.practise_max = 100;
-	ntwt_practise_load(state.practises, /* ntwt_action_new("yell", 0, 0, yell) */
+	ntwt_practise_load(state.practises,
 			   ntwt_std_package.actions,
 			   0.05, 0.005, 0.007);
 	state.context = NULL;
 
 	sock = input;
-	str = malloc(sizeof(char *));
-	*str = malloc(size);
+	str = malloc(size);
 
         while (!ntwt_connection_end_check(sock)) {
 		if (ntwt_connection_read
-		    (sock, str, &size, &message_size, 1) == 1) {
+		    (sock, &str, &size, &message_size, 1) == 1) {
 			printf("message size %u\n", message_size);
-			(*str)[message_size] = NTWT_OP_END;
-			ntwt_interprete(&state, *str);
+			str[message_size] = NTWT_OP_END;
+			ntwt_interprete(&state, str);
 		}
         }
-	free(*str);
 	free(str);
 	ntwt_connection_free(sock);
 	printf("bye!\n");
@@ -61,18 +59,20 @@ int main(int argc, char *args[])
 {
 	/* printf("%i %s\n", argc, args[1]); */
 	/* struct ntwt_practise p[100]; */
+	struct ntwt_instance state;
+
 	struct ntwt_connecter *find_socket;
 	struct ntwt_connection *connect_socket;
 	pthread_t user_thread;
-
-	struct ntwt_instance state;
 
 	FILE *image;
 	long image_size;
 	char *image_code;
 
 	state.practises = calloc(100, sizeof(struct ntwt_practise));
-	ntwt_practise_load(state.practises, ntwt_action_new("yell", 0, 0, yell), 0.5, 0.5, 0.5);
+	ntwt_practise_load(state.practises,
+			   ntwt_action_new("yell", 0, 0, yell),
+			   0.5, 0.5, 0.5);
 	state.context = NULL;
 
 	if (argc >= 2)
