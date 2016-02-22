@@ -1,14 +1,15 @@
 #ifndef NTWT_PRACTISE_H
 #define NTWT_PRACTISE_H
 
+#include <stdint.h>
 #include <pthread.h>
 
 struct ntwt_instance;
 
 struct ntwt_action {
 	char loaded;
-	unsigned int package_num;
-	unsigned int id;
+	uint32_t package_num;
+	uint32_t id;
 	char *name;
 	void (*funct)(double *,
 		      double *,
@@ -29,20 +30,20 @@ struct ntwt_practise {
 
 struct ntwt_package {
 	char loaded;
-	unsigned int package_num;
+	uint32_t package_num;
 
 	char *location;
 	void *handle;
-	unsigned int action_ptr;
-	unsigned int action_max;
+	uint32_t action_ptr;
+	uint32_t action_max;
 	struct ntwt_action *actions;
 };
 
 extern struct ntwt_package ntwt_std_package;
 
 struct ntwt_action *ntwt_action_new(char *name,
-				    unsigned int package_num,
-				    unsigned int id,
+				    uint32_t package_num,
+				    uint32_t id,
 				    void (*funct)(double *,
 						  double *,
 						  double *));
@@ -54,12 +55,12 @@ void ntwt_practise_load(struct ntwt_practise *p,
 			double unsatisfied);
 
 void ntwt_instance_load_package(struct ntwt_instance *instance,
-				unsigned int package_num,
-				unsigned int action_max,
+				uint32_t package_num,
+				uint32_t action_max,
 				char *location);
 
 void ntwt_package_load_action(struct ntwt_package *package,
-			      unsigned int id,
+			      uint32_t id,
 			      char *action_name);
 
 void ntwt_practise_run(struct ntwt_practise *p);

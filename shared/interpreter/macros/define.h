@@ -14,12 +14,12 @@
 		MOVEBY(POINTER, typeof(VARIABLE), 1);	\
 	} while (0)
 
-#define POPSETSTRING(VARIABLE, POINTER)					\
+#define POPSETSTRING(VARIABLE, SIZE, POINTER)				\
 	do {								\
-	        VARIABLE ## _size = strlen(POINTER) + 1;		\
-		VARIABLE = malloc(VARIABLE ## _size);			\
+	        SIZE = strlen(POINTER) + 1;				\
+		VARIABLE = malloc(SIZE);				\
 		strcpy(VARIABLE, POINTER);				\
-	        POINTER += VARIABLE ## _size;				\
+	        POINTER += SIZE;					\
 	} while (0)
 #define POP(TYPE, POINTER)						\
 	({								\
