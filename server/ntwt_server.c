@@ -57,8 +57,6 @@ void *echo_socket(void *input)
 
 int main(int argc, char *args[])
 {
-	/* printf("%i %s\n", argc, args[1]); */
-	/* struct ntwt_practise p[100]; */
 	struct ntwt_instance state;
 
 	struct ntwt_connecter *find_socket;
@@ -106,9 +104,12 @@ int main(int argc, char *args[])
 no_file:
 
 	find_socket = ntwt_connecter_new("echo_socket");
-        connect_socket = ntwt_connecter_accept(find_socket);
-	pthread_create(&user_thread, NULL, echo_socket, (void *) connect_socket);
+	do
+		connect_socket = ntwt_connecter_accept(find_socket);
+	while (!connect_socket);
 
+	pthread_create(&user_thread, NULL, echo_socket,
+		       (void *) connect_socket);
 	pthread_join(user_thread, NULL);
 	ntwt_connecter_free(find_socket);
 	pthread_exit(NULL);

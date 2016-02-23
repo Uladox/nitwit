@@ -9,6 +9,7 @@ struct ntwt_connecter *ntwt_connecter_new(char *path)
 
 	if ((cntr->sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
 		perror("socket");
+		free(cntr);
 		exit(1);
 	}
 
@@ -19,6 +20,7 @@ struct ntwt_connecter *ntwt_connecter_new(char *path)
 
 	if (bind(cntr->sd, (struct sockaddr *)&cntr->socket, len) == -1) {
 		perror("bind");
+		free(cntr);
 		exit(1);
 	}
 
@@ -39,7 +41,8 @@ struct ntwt_connection *ntwt_connection_connect(char *path)
 
 	if ((cntn->sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
 		perror("socket");
-		exit(1);
+		free(cntn);
+	        return NULL;
 	}
 
 	cntn->socket.sun_family = AF_UNIX;
@@ -53,7 +56,8 @@ struct ntwt_connection *ntwt_connection_connect(char *path)
 	if (connect(cntn->sd, (struct sockaddr *)&cntn->socket,
 		    cntn->len) == -1) {
 		perror("connect");
-		exit(1);
+		free(cntn);
+	        return NULL;
 	}
 
 	cntn->end_bool = 0;
@@ -67,22 +71,23 @@ struct ntwt_connection *ntwt_connecter_accept(struct ntwt_connecter *cntr)
 
 	if (listen(cntr->sd, 5) == -1) {
 		perror("listen");
-		exit(1);
+		return NULL;
 	}
 
 	cntn = malloc(sizeof(*cntn));
 
-	pthread_mutex_init(&cntn->end_mutex, NULL);
-	pthread_mutex_init(&cntn->done_mutex, NULL);
-
 	cntn->len = sizeof(struct sockaddr);
 	cntn->sd = accept(cntr->sd,
-				 (struct sockaddr *) &cntn->socket,
-				 &cntn->len);
+			  (struct sockaddr *) &cntn->socket,
+			  &cntn->len);
 	if (cntn->sd == -1) {
 		perror("accept");
-		exit(1);
+		free(cntn);
+		return NULL;
         }
+
+	pthread_mutex_init(&cntn->end_mutex, NULL);
+	pthread_mutex_init(&cntn->done_mutex, NULL);
 	cntn->end_bool = 0;
 
 	return cntn;

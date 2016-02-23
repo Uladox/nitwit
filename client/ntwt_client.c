@@ -21,7 +21,8 @@ int main(void)
 	char *str = NULL;
 	size_t size = 0;
 
-	sock = ntwt_connection_connect(path);
+	if (!(sock = ntwt_connection_connect(path)))
+		return 0;
 	while (!ntwt_connection_end_check(sock)) {
 		ssize_t tmp;
 
