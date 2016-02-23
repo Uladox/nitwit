@@ -35,7 +35,7 @@ struct ntwt_connection *ntwt_connection_connect(char *path)
 {
 	struct ntwt_connection *cntn;
 
-	cntn = malloc(sizeof(*cntn));
+	cntn = malloc(sizeof(struct ntwt_connection));
 
 	if ((cntn->sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
 		perror("socket");
@@ -63,29 +63,29 @@ struct ntwt_connection *ntwt_connection_connect(char *path)
 
 struct ntwt_connection *ntwt_connecter_accept(struct ntwt_connecter *cntr)
 {
-	struct ntwt_connection *remote_cntr;
+	struct ntwt_connection *cntn;
 
 	if (listen(cntr->sd, 5) == -1) {
 		perror("listen");
 		exit(1);
 	}
 
-	remote_cntr = malloc(sizeof(*remote_cntr));
+	cntn = malloc(sizeof(*cntn));
 
-	pthread_mutex_init(&remote_cntr->end_mutex, NULL);
-	pthread_mutex_init(&remote_cntr->done_mutex, NULL);
+	pthread_mutex_init(&cntn->end_mutex, NULL);
+	pthread_mutex_init(&cntn->done_mutex, NULL);
 
-	remote_cntr->len = sizeof(struct sockaddr);
-	remote_cntr->sd = accept(cntr->sd,
-				 (struct sockaddr *) &remote_cntr->socket,
-				 &remote_cntr->len);
-	if (remote_cntr->sd == -1) {
+	cntn->len = sizeof(struct sockaddr);
+	cntn->sd = accept(cntr->sd,
+				 (struct sockaddr *) &cntn->socket,
+				 &cntn->len);
+	if (cntn->sd == -1) {
 		perror("accept");
 		exit(1);
         }
-	remote_cntr->end_bool = 0;
+	cntn->end_bool = 0;
 
-	return remote_cntr;
+	return cntn;
 }
 
 void ntwt_connection_free(struct ntwt_connection *cntn)
@@ -123,12 +123,12 @@ void ntwt_connection_kill(struct ntwt_connection *cntn)
 }
 
 int ntwt_connection_read(struct ntwt_connection *cntn,
-			 char **str, unsigned int *old_size,
-			 int *message_size, unsigned int offset)
+			 char **str, uint32_t *old_size,
+			 int *message_size, uint32_t offset)
 {
 	int retval;
-	unsigned int size = 0;
-	unsigned int offset_size = offset;
+	uint32_t size = 0;
+	uint32_t offset_size = offset;
 
 	pthread_mutex_lock(&cntn->done_mutex);
 
@@ -142,7 +142,7 @@ int ntwt_connection_read(struct ntwt_connection *cntn,
 			&cntn->timeout);
 	if (retval == 1) {
 
-		recv(cntn->sd, &size, sizeof(unsigned int), 0);
+		recv(cntn->sd, &size, sizeof(uint32_t), 0);
 		offset_size += size;
 		/* printf("I got the number: %u\n", size); */
 		if (offset_size > *old_size) {
@@ -166,7 +166,7 @@ int ntwt_connection_read(struct ntwt_connection *cntn,
 }
 
 void ntwt_connection_send(struct ntwt_connection *cntn,
-			  char *str, unsigned int message_size)
+			  char *str, uint32_t message_size)
 {
 	if (!ntwt_connection_end_check(cntn))
 		if (send(cntn->sd, str, message_size, MSG_NOSIGNAL) < 0) {

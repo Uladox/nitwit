@@ -255,7 +255,7 @@ static void term(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info)
 }
 
 void ntwt_asm_program_bytecode(struct ntwt_asm_tree *program,
-			       char **code, unsigned int *old_size,
+			       char **code, size_t *old_size,
 			       unsigned int *message_size)
 {
 	*message_size = program->size;

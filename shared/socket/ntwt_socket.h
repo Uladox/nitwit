@@ -1,6 +1,7 @@
 #ifndef NTWT_SOCKET_H
 #define NTWT_SOCKET_H
 
+#include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -47,10 +48,10 @@ void ntwt_connection_end_mutate(struct ntwt_connection *cntn, int value);
 void ntwt_connection_kill(struct ntwt_connection *cntn);
 
 int ntwt_connection_read(struct ntwt_connection *cntn,
-			 char **str, unsigned int *old_size,
-			 int *message_size, unsigned int offset);
+			 char **str, uint32_t *old_size,
+			 int *message_size, uint32_t offset);
 
 void ntwt_connection_send(struct ntwt_connection *cntn,
-			  char *str, unsigned int size);
+			  char *str, uint32_t message_size);
 
 #endif

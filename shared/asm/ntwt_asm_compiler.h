@@ -1,6 +1,8 @@
 #ifndef NTWT_ASM_COMPILER_H
 #define NTWT_ASM_COMPILER_H
 
+#include <stdlib.h>
+
 struct ntwt_asm_tree {
 	unsigned int lineno;
 	unsigned int type;
@@ -26,7 +28,7 @@ struct ntwt_lex_info {
 struct ntwt_asm_tree *ntwt_asm_statements(char *code);
 
 void ntwt_asm_program_bytecode(struct ntwt_asm_tree *program,
-			       char **code, unsigned int *old_size,
+			       char **code, size_t *old_size,
 			       unsigned int *message_size);
 
 #endif
