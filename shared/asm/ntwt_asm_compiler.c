@@ -9,7 +9,7 @@ static void command(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info);
 
 static void term(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info);
 
-static void lex_string(struct ntwt_lex_info *info, char *current)
+static void lex_string(struct ntwt_lex_info *info, const char *current)
 {
 	int backslashed = 0;
 	while (1) {
@@ -39,7 +39,7 @@ static void lex_string(struct ntwt_lex_info *info, char *current)
 	}
 }
 
-static void lex_num(struct ntwt_lex_info *info, char *current)
+static void lex_num(struct ntwt_lex_info *info, const char *current)
 {
 	unsigned int num_type = NTWT_UINT;
 	int period = 0;
@@ -78,7 +78,7 @@ static void lex_num(struct ntwt_lex_info *info, char *current)
 	}
 }
 
-static void lex_op_code(struct ntwt_lex_info *info, char *current)
+static void lex_op_code(struct ntwt_lex_info *info, const char *current)
 {
 	while(!isspace(*current) && *current != ';') {
 		++current;
@@ -90,7 +90,7 @@ static void lex_op_code(struct ntwt_lex_info *info, char *current)
 
 static void lex(struct ntwt_lex_info *info)
 {
-	char *current = info->lexme;
+	const char *current = info->lexme;
 	current += info->lexlen + info->offset;
 
 	while (isspace(*current)) {
@@ -146,7 +146,7 @@ static inline void advance(struct ntwt_lex_info *info)
 	lex(info);
 }
 
-struct ntwt_asm_tree *ntwt_asm_statements(char *code)
+struct ntwt_asm_tree *ntwt_asm_statements(const char *code)
 {
 	struct ntwt_lex_info info = {
 		.lexme = code,

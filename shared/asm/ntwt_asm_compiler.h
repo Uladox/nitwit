@@ -18,14 +18,14 @@ struct ntwt_asm_tree {
 };
 
 struct ntwt_lex_info {
-	char *lexme;
+	const char *lexme;
 	unsigned int lexlen;
 	unsigned int lineno;
 	unsigned int token;
 	unsigned int offset;
 };
 
-struct ntwt_asm_tree *ntwt_asm_statements(char *code);
+struct ntwt_asm_tree *ntwt_asm_statements(const char *code);
 
 void ntwt_asm_program_bytecode(struct ntwt_asm_tree *program,
 			       char **code, size_t *old_size,

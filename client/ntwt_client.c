@@ -40,7 +40,6 @@ int main(void)
 
 		/* Replaces '\n' with '\0' */
 		str[tmp - 1] = '\0';
-		printf("%s\n", str);
 		ntwt_asm_program_bytecode(ntwt_asm_statements(str),
 					  &str, &size, &msg_len);
 		ntwt_connection_send(sock, (char *) &msg_len,
