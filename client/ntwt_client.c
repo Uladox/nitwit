@@ -21,12 +21,13 @@ int main(void)
 	char *str = NULL;
 	size_t size = 0;
 
-	if (!(sock = ntwt_connection_connect(path)))
+	sock = ntwt_connection_connect(path);
+	if (!sock)
 		return 0;
 	while (!ntwt_connection_end_check(sock)) {
 		ssize_t tmp;
 
-	        printf("> ");
+		printf("> ");
 
 		/* tmp holds -1 if an error occurs or C-d is pressed, so we
 		 * exit the program if that happens, however, we need a
@@ -34,10 +35,9 @@ int main(void)
 		 * so we convert it to uint32_t by assigning it to msg_len.
 		 */
 		tmp = getline(&str, &size, stdin);
-	        if (-1 == tmp)
+		if (-1 == tmp)
 			break;
-		else
-			msg_len = tmp + 1;
+		msg_len = tmp + 1;
 
 		/* Replaces '\n' with '\0' */
 		str[tmp - 1] = '\0';

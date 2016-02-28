@@ -3,11 +3,11 @@
 struct ntwt_connecter *ntwt_connecter_new(char *path)
 {
 	int len;
-	struct ntwt_connecter *cntr;
+	struct ntwt_connecter *cntr = malloc(sizeof(*cntr));
 
-	cntr = malloc(sizeof(*cntr));
+	cntr->sd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-	if ((cntr->sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+	if (cntr->sd == -1) {
 		perror("socket");
 		free(cntr);
 		exit(1);
@@ -35,14 +35,13 @@ void ntwt_connecter_free(struct ntwt_connecter *cntr)
 
 struct ntwt_connection *ntwt_connection_connect(char *path)
 {
-	struct ntwt_connection *cntn;
+	struct ntwt_connection *cntn = malloc(sizeof(*cntn));
 
-	cntn = malloc(sizeof(struct ntwt_connection));
-
-	if ((cntn->sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+	cntn->sd = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (cntn->sd == -1) {
 		perror("socket");
 		free(cntn);
-	        return NULL;
+		return NULL;
 	}
 
 	cntn->socket.sun_family = AF_UNIX;
@@ -57,7 +56,7 @@ struct ntwt_connection *ntwt_connection_connect(char *path)
 		    cntn->len) == -1) {
 		perror("connect");
 		free(cntn);
-	        return NULL;
+		return NULL;
 	}
 
 	cntn->end_bool = 0;
@@ -84,7 +83,7 @@ struct ntwt_connection *ntwt_connecter_accept(struct ntwt_connecter *cntr)
 		perror("accept");
 		free(cntn);
 		return NULL;
-        }
+	}
 
 	pthread_mutex_init(&cntn->end_mutex, NULL);
 	pthread_mutex_init(&cntn->done_mutex, NULL);
@@ -96,7 +95,7 @@ struct ntwt_connection *ntwt_connecter_accept(struct ntwt_connecter *cntr)
 void ntwt_connection_free(struct ntwt_connection *cntn)
 {
 	pthread_mutex_destroy(&cntn->end_mutex);
-        pthread_mutex_destroy(&cntn->done_mutex);
+	pthread_mutex_destroy(&cntn->done_mutex);
 	close(cntn->sd);
 	free(cntn);
 }
@@ -104,6 +103,7 @@ void ntwt_connection_free(struct ntwt_connection *cntn)
 int ntwt_connection_end_check(struct ntwt_connection *cntn)
 {
 	int value;
+
 	pthread_mutex_lock(&cntn->end_mutex);
 	value = cntn->end_bool;
 	pthread_mutex_unlock(&cntn->end_mutex);
@@ -120,9 +120,10 @@ void ntwt_connection_end_mutate(struct ntwt_connection *cntn, int value)
 void ntwt_connection_kill(struct ntwt_connection *cntn)
 {
 	int true_val = 1;
+
 	pthread_mutex_lock(&cntn->done_mutex);
 	ntwt_connection_end_mutate(cntn, 1);
-	setsockopt(cntn->sd, SOL_SOCKET,SO_REUSEADDR,
+	setsockopt(cntn->sd, SOL_SOCKET, SO_REUSEADDR,
 		   &true_val, sizeof(int));
 	pthread_mutex_unlock(&cntn->done_mutex);
 }
