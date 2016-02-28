@@ -47,8 +47,10 @@ static void lex_num(struct ntwt_lex_info *info, const char *current)
 	while (1) {
 		++current;
 		switch (*current) {
-		case '0' ... '9': continue;
-		case '\n': ++info->lineno;
+		case '0' ... '9':
+			continue;
+		case '\n':
+			++info->lineno;
 		case ' ' :
 		case '\t':
 		case '\v':
@@ -80,9 +82,8 @@ static void lex_num(struct ntwt_lex_info *info, const char *current)
 
 static void lex_op_code(struct ntwt_lex_info *info, const char *current)
 {
-	while(!isspace(*current) && *current != ';') {
+	while (!isspace(*current) && *current != ';')
 		++current;
-	}
 
 	info->lexlen = current - info->lexme;
         info->token = NTWT_OP_CODE;
@@ -148,15 +149,15 @@ static inline void advance(struct ntwt_lex_info *info)
 
 struct ntwt_asm_program *ntwt_asm_statements(const char *code)
 {
+	struct ntwt_asm_program *program = malloc(sizeof(*program));
+	struct ntwt_asm_expr *expr;
 	struct ntwt_lex_info info = {
 		.lexme = code,
 		.lexlen = 0,
 		.lineno = 0,
 		.token = NTWT_SEMICOLON
 	};
-	struct ntwt_asm_program *program;
-	struct ntwt_asm_expr *expr;
-	program = malloc(sizeof(*program));
+
 	program->size = 0;
 
 	advance(&info);
@@ -186,10 +187,9 @@ struct ntwt_asm_program *ntwt_asm_statements(const char *code)
 
 static struct ntwt_asm_expr *command(struct ntwt_lex_info *info)
 {
-	struct ntwt_asm_expr *expr;
+	struct ntwt_asm_expr *expr = malloc(sizeof(*expr));
 	struct ntwt_asm_expr *list;
 
-	expr = malloc(sizeof(*expr));
 	expr->type = NTWT_COMMAND;
 	expr->next = NULL;
 	expr->size = 0;
@@ -213,9 +213,8 @@ static struct ntwt_asm_expr *command(struct ntwt_lex_info *info)
 
 static struct ntwt_asm_expr *term(struct ntwt_lex_info *info)
 {
-	struct ntwt_asm_expr *expr;
+	struct ntwt_asm_expr *expr = malloc(sizeof(*expr));
 
-	expr = malloc(sizeof(*expr));
 	expr->next = NULL;
 	switch (expr->type = info->token) {
 	case NTWT_UINT:
@@ -252,34 +251,42 @@ static struct ntwt_asm_expr *term(struct ntwt_lex_info *info)
 	return expr;
 }
 
+static void ntwt_asm_term_bytecode(struct ntwt_asm_expr *term,
+				   char **code_ptr)
+{
+	if (unlikely(term->type == NTWT_STRING))
+		memcpy(*code_ptr, term->contents.string,
+		       term->size);
+	else
+		memcpy(*code_ptr, &term->contents, term->size);
+
+	*code_ptr += term->size;
+}
+
+static void ntwt_asm_command_bytecode(struct ntwt_asm_expr *command,
+				      char **code_ptr)
+{
+	struct ntwt_asm_expr *term = command->contents.list;
+
+	for (; term; term = term->next)
+		ntwt_asm_term_bytecode(term, code_ptr);
+}
+
 void ntwt_asm_program_bytecode(struct ntwt_asm_program *program,
 			       char **code, size_t *old_size,
 			       unsigned int *message_size)
 {
-	*message_size = program->size;
+	char *code_ptr = *code;
 
-	if (program->size > *old_size) {
+	*message_size = program->size;
+	if (unlikely(program->size > *old_size)) {
 		free(*code);
 		*code = malloc(program->size);
 		*old_size = program->size;
 	}
-	/* char *code = malloc(program->size); */
-	char *code_ptr = *code;
 
 	struct ntwt_asm_expr *command;
 	for (command = program->expr;
-	     command; command = command->next) {
-		struct ntwt_asm_expr *term;
-		for (term = command->contents.list;
-		     term; term = term->next) {
-			if (term->type == NTWT_STRING) {
-				memcpy(code_ptr, term->contents.string,
-				       term->size);
-			}
-			else {
-				memcpy(code_ptr, &term->contents, term->size);
-			}
-			code_ptr += term->size;
-		}
-	}
+	     command; command = command->next)
+		ntwt_asm_command_bytecode(command, &code_ptr);
 }
