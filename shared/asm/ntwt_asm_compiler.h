@@ -3,13 +3,18 @@
 
 #include <stdlib.h>
 
-struct ntwt_asm_tree {
+struct ntwt_asm_program {
+	unsigned int size;
+	struct ntwt_asm_expr *expr;
+};
+
+struct ntwt_asm_expr {
 	unsigned int lineno;
 	unsigned int type;
 	unsigned int size;
-	struct ntwt_asm_tree *next;
+	struct ntwt_asm_expr *next;
 	union {
-		struct ntwt_asm_tree *branch;
+		struct ntwt_asm_expr *list;
 		unsigned int integer;
 		double decimal;
 		char *string;
@@ -25,9 +30,9 @@ struct ntwt_lex_info {
 	unsigned int offset;
 };
 
-struct ntwt_asm_tree *ntwt_asm_statements(const char *code);
+struct ntwt_asm_program *ntwt_asm_statements(const char *code);
 
-void ntwt_asm_program_bytecode(struct ntwt_asm_tree *program,
+void ntwt_asm_program_bytecode(struct ntwt_asm_program *program,
 			       char **code, size_t *old_size,
 			       unsigned int *message_size);
 

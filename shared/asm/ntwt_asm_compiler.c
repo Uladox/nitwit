@@ -3,11 +3,12 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include "../nitwit_macros.h"
 #include "../interpreter/ntwt_interpreter.h"
 
-static void command(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info);
+static struct ntwt_asm_expr *command(struct ntwt_lex_info *info);
 
-static void term(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info);
+static struct ntwt_asm_expr *term(struct ntwt_lex_info *info);
 
 static void lex_string(struct ntwt_lex_info *info, const char *current)
 {
@@ -26,12 +27,12 @@ static void lex_string(struct ntwt_lex_info *info, const char *current)
 			++info->lineno; backslashed = 0;
 			break;
 		case '\"':
-			if (!backslashed) {
-				info->lexlen = current - info->lexme;
-				info->offset = 1;
-			        info->token =  NTWT_STRING;
-				return;
-			}
+			if (backslashed)
+				break;
+			info->lexlen = current - info->lexme;
+			info->offset = 1;
+			info->token =  NTWT_STRING;
+			return;
 		default:
 			backslashed = 0;
 			break;
@@ -46,30 +47,29 @@ static void lex_num(struct ntwt_lex_info *info, const char *current)
 	while (1) {
 		++current;
 		switch (*current) {
-		case '0' ... '9' : continue;
-		case '\n' : ++info->lineno;
-		case ' '  :
-		case '\t' :
-		case '\v' :
-		case '\f' :
-		case '\r' :
-		case ';'  :
+		case '0' ... '9': continue;
+		case '\n': ++info->lineno;
+		case ' ' :
+		case '\t':
+		case '\v':
+		case '\f':
+		case '\r':
+		case ';' :
 			info->lexlen = current - info->lexme;
 			info->token = num_type;
 			return;
-		case '.' :
-			if (period) {
-				fprintf(stderr, "Error: to many '.' in "
-					"number on line %u\n", info->lineno);
-				exit(1);
-			}
+		case '.':
 			num_type = NTWT_DOUBLE;
-			break;
-		case '\0' :
+			if (likely(!period))
+				break;
+			fprintf(stderr, "Error: to many '.' in "
+				"number on line %u\n", info->lineno);
+			exit(1);
+		case '\0':
 			fprintf(stderr, "Error: unexpected end of input "
 				"on line %u\n", info->lineno);
 			exit(1);
-		default :
+		default:
 			fprintf(stderr, "Error: invalid char '%c' in "
 				"number on line %u\n", *current,
 				info->lineno);
@@ -146,7 +146,7 @@ static inline void advance(struct ntwt_lex_info *info)
 	lex(info);
 }
 
-struct ntwt_asm_tree *ntwt_asm_statements(const char *code)
+struct ntwt_asm_program *ntwt_asm_statements(const char *code)
 {
 	struct ntwt_lex_info info = {
 		.lexme = code,
@@ -154,93 +154,89 @@ struct ntwt_asm_tree *ntwt_asm_statements(const char *code)
 		.lineno = 0,
 		.token = NTWT_SEMICOLON
 	};
-	struct ntwt_asm_tree *program;
-	struct ntwt_asm_tree *tree;
+	struct ntwt_asm_program *program;
+	struct ntwt_asm_expr *expr;
 	program = malloc(sizeof(*program));
-	program->contents.branch = malloc(sizeof(*program->contents.branch));
 	program->size = 0;
-        tree = program->contents.branch;
 
 	advance(&info);
-	command(tree, &info);
-	if (!match(&info, NTWT_SEMICOLON)) {
+	expr = (program->expr = command(&info));
+
+	if (unlikely(!match(&info, NTWT_SEMICOLON))) {
 		fprintf(stderr, "Error: Inserting missing semicolon "
 			"on line %u\n", info.lineno);
 		exit(1);
-	} else {
-		program->size += tree->size;
-		advance(&info);
 	}
 
-	/* printf("token: %u\n", info.token); */
+	program->size += expr->size;
+	advance(&info);
         while (!match(&info, NTWT_EOI)) {
-		tree->next = malloc(sizeof(*tree->next));
-		tree = tree->next;
-		command(tree, &info);
-		if (match(&info, NTWT_SEMICOLON)) {
-			program->size += tree->size;
-			advance(&info);
-		} else {
-			fprintf(stderr, "Error: Inserting missing semicolon "
+		expr = (expr->next = command(&info));
+		if (unlikely(!match(&info, NTWT_SEMICOLON))) {
+			fprintf(stderr, "Error: Insert missing semicolon "
 				"on line %u\n", info.lineno);
 			exit(1);
 		}
+		program->size += expr->size;
+		advance(&info);
 	}
 
 	return program;
-	/* printf("token: %u, %u, %.*s\n", a.token, a.lexlen, a.lexlen, a.lexme); */
 }
 
-static void command(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info)
+static struct ntwt_asm_expr *command(struct ntwt_lex_info *info)
 {
-	struct ntwt_asm_tree *branch;
+	struct ntwt_asm_expr *expr;
+	struct ntwt_asm_expr *list;
 
-	tree->type = NTWT_COMMAND;
-	tree->next = NULL;
-	tree->size = 0;
-	tree->contents.branch = malloc(sizeof(*tree->contents.branch));
+	expr = malloc(sizeof(*expr));
+	expr->type = NTWT_COMMAND;
+	expr->next = NULL;
+	expr->size = 0;
 
-	branch = tree->contents.branch;
-
-	term(branch, info);
-	tree->size += branch->size;
+	list = (expr->contents.list = term(info));
+	expr->size += list->size;
 	advance(info);
 	while (!match(info, NTWT_SEMICOLON)) {
-		if (match(info, NTWT_EOI)) {
+		if (unlikely(match(info, NTWT_EOI))) {
 			printf("Error: end of input on line: %u\n",
 				info->lineno);
 			exit(1);
 		}
-	        branch->next = malloc(sizeof(*branch->next));
-		branch = branch->next;
-		term(branch, info);
-		tree->size += branch->size;
+	        list = (list->next = term(info));
+		expr->size += list->size;
 		advance(info);
 	}
+
+	return expr;
 }
 
-static void term(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info)
+static struct ntwt_asm_expr *term(struct ntwt_lex_info *info)
 {
-	tree->next = NULL;
-	switch (tree->type = info->token) {
+	struct ntwt_asm_expr *expr;
+
+	expr = malloc(sizeof(*expr));
+	expr->next = NULL;
+	switch (expr->type = info->token) {
 	case NTWT_UINT:
-		tree->size = sizeof(unsigned int);
-		tree->contents.integer = strtoul(info->lexme, NULL, 0);
+		expr->size = sizeof(unsigned int);
+		expr->contents.integer = strtoul(info->lexme, NULL, 0);
 		break;
 	case NTWT_DOUBLE:
-		tree->size = sizeof(double);
-		tree->contents.decimal = strtod(info->lexme, NULL);
+		expr->size = sizeof(double);
+		expr->contents.decimal = strtod(info->lexme, NULL);
 		break;
 	case NTWT_STRING:
-		tree->contents.string = malloc(tree->size = info->lexlen + 1);
-		strncpy(tree->contents.string, info->lexme, info->lexlen);
+		expr->contents.string = malloc(expr->size = info->lexlen + 1);
+		strncpy(expr->contents.string, info->lexme, info->lexlen);
 		break;
 	case NTWT_OP_CODE:
-		tree->size = sizeof(char);
+		expr->size = sizeof(char);
+		/* Note: Replace with proper hashmap */
 		if (!strncmp(info->lexme, "TEST", info->lexlen))
-			tree->contents.op_code = NTWT_OP_TEST;
+			expr->contents.op_code = NTWT_OP_TEST;
 		else if (!strncmp(info->lexme, "END", info->lexlen))
-			tree->contents.op_code = NTWT_OP_END;
+			expr->contents.op_code = NTWT_OP_END;
 		else {
 			fprintf(stderr, "Error: unrecognized op code "
 				"on line %u\n", info->lineno);
@@ -252,9 +248,11 @@ static void term(struct ntwt_asm_tree *tree, struct ntwt_lex_info *info)
 			"on line %u\n", info->lineno);
 		exit(1);
 	}
+
+	return expr;
 }
 
-void ntwt_asm_program_bytecode(struct ntwt_asm_tree *program,
+void ntwt_asm_program_bytecode(struct ntwt_asm_program *program,
 			       char **code, size_t *old_size,
 			       unsigned int *message_size)
 {
@@ -268,11 +266,11 @@ void ntwt_asm_program_bytecode(struct ntwt_asm_tree *program,
 	/* char *code = malloc(program->size); */
 	char *code_ptr = *code;
 
-	struct ntwt_asm_tree *command;
-	for (command = program->contents.branch;
+	struct ntwt_asm_expr *command;
+	for (command = program->expr;
 	     command; command = command->next) {
-		struct ntwt_asm_tree *term;
-		for (term = command->contents.branch;
+		struct ntwt_asm_expr *term;
+		for (term = command->contents.list;
 		     term; term = term->next) {
 			if (term->type == NTWT_STRING) {
 				memcpy(code_ptr, term->contents.string,
@@ -285,11 +283,3 @@ void ntwt_asm_program_bytecode(struct ntwt_asm_tree *program,
 		}
 	}
 }
-
-/* void ntwt_bytecode_write(struct ntwt_asm_tree *tree) */
-/* { */
-/* 	remove("state.ilk"); */
-/* 	FILE *image = fopen("state.ilk", "ab"); */
-/*         fwrite(code, sizeof(char), strlen(code), image); */
-/* 	fclose(image); */
-/* } */
