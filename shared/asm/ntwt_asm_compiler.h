@@ -30,10 +30,17 @@ struct ntwt_lex_info {
 	unsigned int offset;
 };
 
-struct ntwt_asm_program *ntwt_asm_statements(const char *code);
+void ntwt_asm_statements(struct ntwt_asm_program *program,
+			 struct ntwt_asm_expr **stack,
+			 const char *code);
 
 void ntwt_asm_program_bytecode(struct ntwt_asm_program *program,
 			       char **code, size_t *old_size,
 			       unsigned int *message_size);
+
+void ntwt_asm_recycle(struct ntwt_asm_expr **stack,
+		      struct ntwt_asm_expr *top);
+
+void ntwt_asm_expr_free(struct ntwt_asm_expr *expr);
 
 #endif

@@ -20,6 +20,10 @@ int main(void)
 	uint32_t msg_len;
 	char *str = NULL;
 	size_t size = 0;
+	struct ntwt_asm_expr *stack = NULL;
+	struct ntwt_asm_program program = {
+		.expr = NULL
+	};
 
 	sock = ntwt_connection_connect(path);
 	if (!sock)
@@ -41,8 +45,10 @@ int main(void)
 
 		/* Replaces '\n' with '\0' */
 		str[tmp - 1] = '\0';
-		ntwt_asm_program_bytecode(ntwt_asm_statements(str),
-					  &str, &size, &msg_len);
+
+		ntwt_asm_recycle(&stack, program.expr);
+		ntwt_asm_statements(&program, &stack, str);
+		ntwt_asm_program_bytecode(&program, &str, &size, &msg_len);
 		ntwt_connection_send(sock, (char *) &msg_len,
 				     sizeof(uint32_t));
 		ntwt_connection_send(sock, str, msg_len);
@@ -50,7 +56,8 @@ int main(void)
 	putchar('\n');
 	free(str);
 	ntwt_connection_free(sock);
-
+	if (program.expr)
+		ntwt_asm_expr_free(program.expr);
 	return 0;
 }
 

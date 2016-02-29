@@ -6,9 +6,11 @@
 #include "../nitwit_macros.h"
 #include "../interpreter/ntwt_interpreter.h"
 
-static struct ntwt_asm_expr *command(struct ntwt_lex_info *info);
+static struct ntwt_asm_expr *command(struct ntwt_lex_info *info,
+				     struct ntwt_asm_expr **stack);
 
-static struct ntwt_asm_expr *term(struct ntwt_lex_info *info);
+static struct ntwt_asm_expr *term(struct ntwt_lex_info *info,
+				  struct ntwt_asm_expr **stack);
 
 static void lex_string(struct ntwt_lex_info *info, const char *current)
 {
@@ -151,9 +153,20 @@ static inline void advance(struct ntwt_lex_info *info)
 	lex(info);
 }
 
-struct ntwt_asm_program *ntwt_asm_statements(const char *code)
+static struct ntwt_asm_expr *pop(struct ntwt_asm_expr **stack)
 {
-	struct ntwt_asm_program *program = malloc(sizeof(*program));
+	if (*stack) {
+		struct ntwt_asm_expr *tmp = *stack;
+		*stack = (*stack)->next;
+		return tmp;
+	}
+	return malloc(sizeof(**stack));
+}
+
+void ntwt_asm_statements(struct ntwt_asm_program *program,
+			 struct ntwt_asm_expr **stack,
+			 const char *code)
+{
 	struct ntwt_asm_expr *expr;
 	struct ntwt_lex_info info = {
 		.lexme = code,
@@ -165,7 +178,7 @@ struct ntwt_asm_program *ntwt_asm_statements(const char *code)
 	program->size = 0;
 
 	advance(&info);
-	expr = (program->expr = command(&info));
+	expr = (program->expr = command(&info, stack));
 
 	if (unlikely(!match(&info, NTWT_SEMICOLON))) {
 		fprintf(stderr,
@@ -177,7 +190,7 @@ struct ntwt_asm_program *ntwt_asm_statements(const char *code)
 	program->size += expr->size;
 	advance(&info);
 	while (!match(&info, NTWT_EOI)) {
-		expr = (expr->next = command(&info));
+		expr = (expr->next = command(&info, stack));
 		if (unlikely(!match(&info, NTWT_SEMICOLON))) {
 			fprintf(stderr,
 				"Error: Insert missing semicolon on line %u\n",
@@ -187,20 +200,19 @@ struct ntwt_asm_program *ntwt_asm_statements(const char *code)
 		program->size += expr->size;
 		advance(&info);
 	}
-
-	return program;
 }
 
-static struct ntwt_asm_expr *command(struct ntwt_lex_info *info)
+static struct ntwt_asm_expr *command(struct ntwt_lex_info *info,
+				     struct ntwt_asm_expr **stack)
 {
-	struct ntwt_asm_expr *expr = malloc(sizeof(*expr));
+	struct ntwt_asm_expr *expr = pop(stack);
 	struct ntwt_asm_expr *list;
 
 	expr->type = NTWT_COMMAND;
 	expr->next = NULL;
 	expr->size = 0;
 
-	list = (expr->contents.list = term(info));
+	list = (expr->contents.list = term(info, stack));
 	expr->size += list->size;
 	advance(info);
 	while (!match(info, NTWT_SEMICOLON)) {
@@ -210,7 +222,7 @@ static struct ntwt_asm_expr *command(struct ntwt_lex_info *info)
 				info->lineno);
 			exit(1);
 		}
-		list = (list->next = term(info));
+		list = (list->next = term(info, stack));
 		expr->size += list->size;
 		advance(info);
 	}
@@ -218,9 +230,10 @@ static struct ntwt_asm_expr *command(struct ntwt_lex_info *info)
 	return expr;
 }
 
-static struct ntwt_asm_expr *term(struct ntwt_lex_info *info)
+static struct ntwt_asm_expr *term(struct ntwt_lex_info *info,
+				  struct ntwt_asm_expr **stack)
 {
-	struct ntwt_asm_expr *expr = malloc(sizeof(*expr));
+	struct ntwt_asm_expr *expr = pop(stack);
 
 	expr->next = NULL;
 	switch (expr->type = info->token) {
@@ -299,4 +312,38 @@ void ntwt_asm_program_bytecode(struct ntwt_asm_program *program,
 	for (command = program->expr;
 	     command; command = command->next)
 		ntwt_asm_command_bytecode(command, &code_ptr);
+}
+
+void ntwt_asm_recycle(struct ntwt_asm_expr **stack,
+		      struct ntwt_asm_expr *top)
+{
+	struct ntwt_asm_expr *expr = top;
+
+	while (expr) {
+		struct ntwt_asm_expr *tmp;
+
+		if (expr->type == NTWT_STRING)
+			free(expr->contents.string);
+		else if (expr->type == NTWT_COMMAND)
+			ntwt_asm_recycle(stack, expr->contents.list);
+		tmp = expr;
+		expr = expr->next;
+		tmp->next = *stack;
+		*stack = tmp;
+	}
+}
+
+void ntwt_asm_expr_free(struct ntwt_asm_expr *expr)
+{
+	while (expr) {
+		struct ntwt_asm_expr *tmp;
+
+		if (expr->type == NTWT_STRING)
+			free(expr->contents.string);
+		else if (expr->type == NTWT_COMMAND)
+			ntwt_asm_expr_free(expr->contents.list);
+		tmp = expr;
+		expr = expr->next;
+		free(tmp);
+	}
 }
