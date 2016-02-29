@@ -255,7 +255,7 @@ static void rehash(struct ntwt_hashmap *map)
 	new_bin_num = map->primes_pointer[1];
 	new_bins = malloc(sizeof(*new_bins) * new_bin_num);
 
-	unsigned int i;
+        int i;
 
 	for (i = 0; i != new_bin_num; ++i)
 		new_bins[i].first = NULL;
