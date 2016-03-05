@@ -6,7 +6,10 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <locale.h>
+#include <uniconv.h>
 
+#include "../shared/unicode/ntwt_unihelpers.h"
 #include "../shared/socket/ntwt_socket.h"
 #include "../shared/interpreter/ntwt_interpreter.h"
 #include "../shared/asm/ntwt_asm_compiler.h"
@@ -15,11 +18,16 @@
 
 int main(void)
 {
+	setlocale(LC_ALL, "");
+
 	char *path = "echo_socket";
 	struct ntwt_connection *sock;
+	const char *charset = locale_charset();
 	uint32_t msg_len;
 	char *str = NULL;
 	size_t size = 0;
+	uint8_t *uni_str = NULL;
+	size_t uni_size = 0;
 
 	sock = ntwt_connection_connect(path);
 	if (!sock)
@@ -41,7 +49,11 @@ int main(void)
 
 		/* Replaces '\n' with '\0' */
 		str[tmp - 1] = '\0';
-		ntwt_asm_program_bytecode(ntwt_asm_statements(str),
+		get_u8(charset, str, msg_len, &uni_str, &uni_size);
+		get_encoded(charset, uni_str, uni_size, &str, &size);
+		printf("%s\n", str);
+
+		ntwt_asm_program_bytecode(ntwt_asm_statements(uni_str),
 					  &str, &size, &msg_len);
 		ntwt_connection_send(sock, (char *) &msg_len,
 				     sizeof(uint32_t));

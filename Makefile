@@ -4,7 +4,8 @@ SRC_FILES = \
 	shared/socket/ntwt_socket.c \
 	shared/practise/ntwt_practise.c \
 	shared/interpreter/ntwt_interpreter.c \
-	shared/asm/ntwt_asm_compiler.c
+	shared/asm/ntwt_asm_compiler.c \
+	shared/unicode/ntwt_unihelpers.c
 
 
 DEBUG_PATH = bin/debug
@@ -22,7 +23,8 @@ SERVER_FILES = \
 CLIENT_FILES = \
 	ntwt_client.o \
 	ntwt_socket.o \
-	ntwt_asm_compiler.o
+	ntwt_asm_compiler.o \
+	ntwt_unihelpers.o
 
 ntwt_server.o = \
 	shared/socket/ntwt_socket.h \
@@ -31,7 +33,8 @@ ntwt_server.o = \
 ntwt_client.o = \
 	shared/socket/ntwt_socket.h \
 	shared/interpreter/ntwt_interpreter.h \
-	shared/asm/ntwt_asm_compiler.h
+	shared/asm/ntwt_asm_compiler.h \
+	shared/unicode/ntwt_unihelpers.h
 
 ntwt_interpreter.o = \
 	shared/interpreter/states.c \
@@ -51,7 +54,7 @@ $(RELEASE_PATH)/$(1): $(addprefix $(RELEASE_PATH)/,$(2)) $(4)
 endef
 
 $(eval $(call make-execs,nitwit_server,$(SERVER_FILES),-pthread -ldl,));
-$(eval $(call make-execs,nitwit_client,$(CLIENT_FILES),));
+$(eval $(call make-execs,nitwit_client,$(CLIENT_FILES),-lunistring));
 
 define make-objs
 $(eval x = $(patsubst %.c, %.o, $(notdir $(1))))

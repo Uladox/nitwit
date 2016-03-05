@@ -2,6 +2,7 @@
 #define NTWT_ASM_COMPILER_H
 
 #include <stdlib.h>
+#include <stdint.h>
 
 struct ntwt_asm_program {
 	unsigned int size;
@@ -17,20 +18,20 @@ struct ntwt_asm_expr {
 		struct ntwt_asm_expr *list;
 		unsigned int integer;
 		double decimal;
-		char *string;
+		uint8_t *string;
 		char op_code;
 	} contents;
 };
 
 struct ntwt_lex_info {
-	const char *lexme;
-	unsigned int lexlen;
+	const uint8_t *lexme;
+	size_t lexlen;
 	unsigned int lineno;
 	unsigned int token;
 	unsigned int offset;
 };
 
-struct ntwt_asm_program *ntwt_asm_statements(const char *code);
+struct ntwt_asm_program *ntwt_asm_statements(const uint8_t *code);
 
 void ntwt_asm_program_bytecode(struct ntwt_asm_program *program,
 			       char **code, size_t *old_size,

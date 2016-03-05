@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <unistr.h>
 #include "../nitwit_macros.h"
 #include "../interpreter/ntwt_interpreter.h"
 
@@ -10,10 +11,9 @@ static struct ntwt_asm_expr *command(struct ntwt_lex_info *info);
 
 static struct ntwt_asm_expr *term(struct ntwt_lex_info *info);
 
-static void lex_string(struct ntwt_lex_info *info, const char *current)
+static void lex_string(struct ntwt_lex_info *info, const uint8_t *current)
 {
 	int backslashed = 0;
-
 	while (1) {
 		++current;
 		switch (*current) {
@@ -42,7 +42,7 @@ static void lex_string(struct ntwt_lex_info *info, const char *current)
 	}
 }
 
-static void lex_num(struct ntwt_lex_info *info, const char *current)
+static void lex_num(struct ntwt_lex_info *info, const uint8_t *current)
 {
 	unsigned int num_type = NTWT_UINT;
 	int period = 0;
@@ -85,7 +85,7 @@ static void lex_num(struct ntwt_lex_info *info, const char *current)
 	}
 }
 
-static void lex_op_code(struct ntwt_lex_info *info, const char *current)
+static void lex_op_code(struct ntwt_lex_info *info, const uint8_t *current)
 {
 	while (!isspace(*current) && *current != ';')
 		++current;
@@ -96,7 +96,7 @@ static void lex_op_code(struct ntwt_lex_info *info, const char *current)
 
 static void lex(struct ntwt_lex_info *info)
 {
-	const char *current = info->lexme;
+	const uint8_t *current = info->lexme;
 
 	current += info->lexlen + info->offset;
 	while (isspace(*current)) {
@@ -151,7 +151,7 @@ static inline void advance(struct ntwt_lex_info *info)
 	lex(info);
 }
 
-struct ntwt_asm_program *ntwt_asm_statements(const char *code)
+struct ntwt_asm_program *ntwt_asm_statements(const uint8_t *code)
 {
 	struct ntwt_asm_program *program = malloc(sizeof(*program));
 	struct ntwt_asm_expr *expr;
@@ -226,22 +226,26 @@ static struct ntwt_asm_expr *term(struct ntwt_lex_info *info)
 	switch (expr->type = info->token) {
 	case NTWT_UINT:
 		expr->size = sizeof(unsigned int);
-		expr->contents.integer = strtoul(info->lexme, NULL, 0);
+		/* treats utf8 as ascii for stroul */
+		expr->contents.integer = strtoul((char *) info->lexme, NULL, 0);
 		break;
 	case NTWT_DOUBLE:
 		expr->size = sizeof(double);
-		expr->contents.decimal = strtod(info->lexme, NULL);
+		/* treats utf8 as ascii for strod */
+		expr->contents.decimal = strtod((char *) info->lexme, NULL);
 		break;
 	case NTWT_STRING:
 		expr->contents.string = malloc(expr->size = info->lexlen + 1);
-		strncpy(expr->contents.string, info->lexme, info->lexlen);
+		u8_strncpy(expr->contents.string, info->lexme, info->lexlen);
 		break;
 	case NTWT_OP_CODE:
 		expr->size = sizeof(char);
 		/* Note: Replace with proper hashmap */
-		if (!strncmp(info->lexme, "TEST", info->lexlen))
+		if (!u8_strncmp(info->lexme, (uint8_t *) "TEST",
+				info->lexlen))
 			expr->contents.op_code = NTWT_OP_TEST;
-		else if (!strncmp(info->lexme, "END", info->lexlen))
+		else if (!u8_strncmp(info->lexme, (uint8_t *) "END",
+				     info->lexlen))
 			expr->contents.op_code = NTWT_OP_END;
 		else {
 			fprintf(stderr,
