@@ -28,6 +28,11 @@ int main(void)
 	size_t size = 0;
 	uint8_t *uni_str = NULL;
 	size_t uni_size = 0;
+	struct ntwt_asm_expr *stack = NULL;
+	struct ntwt_asm_program program = {
+		.expr = NULL
+	};
+
 
 	sock = ntwt_connection_connect(path);
 	if (!sock)
@@ -53,16 +58,19 @@ int main(void)
 		get_encoded(charset, uni_str, uni_size, &str, &size);
 		printf("%s\n", str);
 
-		ntwt_asm_program_bytecode(ntwt_asm_statements(uni_str),
-					  &str, &size, &msg_len);
+		ntwt_asm_recycle(&stack, program.expr);
+		ntwt_asm_statements(&program, &stack, uni_str);
+		ntwt_asm_program_bytecode(&program, &str, &size, &msg_len);
 		ntwt_connection_send(sock, (char *) &msg_len,
 				     sizeof(uint32_t));
 		ntwt_connection_send(sock, str, msg_len);
 	}
 	putchar('\n');
 	free(str);
+	free(uni_str);
 	ntwt_connection_free(sock);
-
+	if (program.expr)
+		ntwt_asm_expr_free(program.expr);
 	return 0;
 }
 
