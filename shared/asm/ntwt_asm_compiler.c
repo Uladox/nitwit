@@ -165,7 +165,7 @@ struct ntwt_asm_program *ntwt_asm_statements(const uint8_t *code)
 	program->size = 0;
 
 	advance(&info);
-	expr = (program->expr = command(&info));
+	expr = (program->expr = command(&info, stack));
 
 	if (unlikely(!match(&info, NTWT_SEMICOLON))) {
 		fprintf(stderr,
