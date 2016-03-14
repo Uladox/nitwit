@@ -52,6 +52,6 @@ int ntwt_connection_read(struct ntwt_connection *cntn,
 			 int *message_size, uint32_t offset);
 
 void ntwt_connection_send(struct ntwt_connection *cntn,
-			  char *str, uint32_t message_size);
+			  const void *msg, uint32_t msg_size);
 
 #endif

@@ -18,6 +18,7 @@ static void lex_string(struct ntwt_lex_info *info, const uint8_t *current)
 	int backslashed = 0;
 	while (1) {
 		++current;
+		--info->units;
 		switch (*current) {
 		case '\0':
 			fprintf(stderr,
@@ -51,6 +52,7 @@ static void lex_num(struct ntwt_lex_info *info, const uint8_t *current)
 
 	while (1) {
 		++current;
+		--info->units;
 		switch (*current) {
 		case '0' ... '9':
 			continue;
@@ -89,8 +91,10 @@ static void lex_num(struct ntwt_lex_info *info, const uint8_t *current)
 
 static void lex_op_code(struct ntwt_lex_info *info, const uint8_t *current)
 {
-	while (!isspace(*current) && *current != ';')
+	while (!isspace(*current) && *current != ';') {
 		++current;
+		--info->units;
+	}
 
 	info->lexlen = current - info->lexme;
 	info->token = NTWT_OP_CODE;
@@ -99,19 +103,23 @@ static void lex_op_code(struct ntwt_lex_info *info, const uint8_t *current)
 static void lex(struct ntwt_lex_info *info)
 {
 	const uint8_t *current = info->lexme;
+	ucs4_t puc;
 
 	current += info->lexlen + info->offset;
+	info->units -= info->lexlen + info->offset;
 	while (isspace(*current)) {
 		if (*current == '\n')
 			++info->lineno;
 		++current;
+		--info->units;
 	}
 
 	info->lexlen = 1;
 	info->offset = 0;
 	info->lexme = current;
 
-	switch (*current) {
+	u8_mbtouc_unsafe (&puc, current, info->units);
+	switch (puc) {
 	case '\0':
 		info->token = NTWT_EOI;
 		break;
@@ -119,7 +127,8 @@ static void lex(struct ntwt_lex_info *info)
 		info->token = NTWT_SEMICOLON;
 		break;
 	case '"':
-		++info->lexme; lex_string(info, current);
+		++info->lexme;
+		lex_string(info, current);
 		break;
 	case '0' ... '9':
 		lex_num(info, current);
@@ -129,6 +138,9 @@ static void lex(struct ntwt_lex_info *info)
 		++info->lexme;
 		lex_op_code(info, current);
 		break;
+	case U'🐣':
+		printf(u8"λ🐣!\n");
+		exit(0);
 	default:
 		/* Assumes an  op code after ';' */
 		if (info->token != NTWT_SEMICOLON) {
@@ -172,6 +184,7 @@ void ntwt_asm_statements(struct ntwt_asm_program *program,
 	struct ntwt_lex_info info = {
 		.lexme = code,
 		.lexlen = 0,
+		.units = u8_strlen(code),
 		.lineno = 0,
 		.token = NTWT_SEMICOLON
 	};
@@ -255,10 +268,10 @@ static struct ntwt_asm_expr *term(struct ntwt_lex_info *info,
 	case NTWT_OP_CODE:
 		expr->size = sizeof(char);
 		/* Note: Replace with proper hashmap */
-		if (!u8_strncmp(info->lexme, (uint8_t *) "TEST",
+		if (!u8_strncmp(info->lexme, (uint8_t *) u8"TEST",
 				info->lexlen))
 			expr->contents.op_code = NTWT_OP_TEST;
-		else if (!u8_strncmp(info->lexme, (uint8_t *) "END",
+		else if (!u8_strncmp(info->lexme, (uint8_t *) u8"END",
 				     info->lexlen))
 			expr->contents.op_code = NTWT_OP_END;
 		else {

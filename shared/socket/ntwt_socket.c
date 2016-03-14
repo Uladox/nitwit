@@ -130,7 +130,7 @@ void ntwt_connection_kill(struct ntwt_connection *cntn)
 
 int ntwt_connection_read(struct ntwt_connection *cntn,
 			 char **str, uint32_t *old_size,
-			 int *message_size, uint32_t offset)
+			 int *msg_size, uint32_t offset)
 {
 	int retval;
 	uint32_t size = 0;
@@ -150,18 +150,17 @@ int ntwt_connection_read(struct ntwt_connection *cntn,
 
 		recv(cntn->sd, &size, sizeof(uint32_t), 0);
 		offset_size += size;
-		/* printf("I got the number: %u\n", size); */
+
 		if (offset_size > *old_size) {
 			free(*str);
 			*str = malloc(offset_size);
 			*old_size = offset_size;
 		}
 
-		*message_size = recv(cntn->sd, *str, size, 0);
-		/* printf("and the string, %.*s", size, *str); */
+		*msg_size = recv(cntn->sd, *str, size, 0);
 
-		if (*message_size <= 0) {
-			if (*message_size < 0)
+		if (*msg_size <= 0) {
+			if (*msg_size < 0)
 				perror("recv");
 			ntwt_connection_end_mutate(cntn, 1);
 		}
@@ -172,10 +171,10 @@ int ntwt_connection_read(struct ntwt_connection *cntn,
 }
 
 void ntwt_connection_send(struct ntwt_connection *cntn,
-			  char *str, uint32_t message_size)
+			  const void *msg, uint32_t msg_size)
 {
 	if (!ntwt_connection_end_check(cntn))
-		if (send(cntn->sd, str, message_size, MSG_NOSIGNAL) < 0) {
+		if (send(cntn->sd, msg, msg_size, MSG_NOSIGNAL) < 0) {
 			perror("send");
 			ntwt_connection_end_mutate(cntn, 1);
 		}

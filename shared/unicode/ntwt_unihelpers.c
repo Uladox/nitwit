@@ -33,3 +33,4 @@ void get_encoded(const char *charset, const uint8_t *src, size_t src_size,
 		*result_size = tmp_size;
 	*result = tmp_encoded;
 }
+

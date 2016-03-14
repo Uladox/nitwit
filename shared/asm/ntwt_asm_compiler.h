@@ -26,6 +26,7 @@ struct ntwt_asm_expr {
 struct ntwt_lex_info {
 	const uint8_t *lexme;
 	size_t lexlen;
+	size_t units;
 	unsigned int lineno;
 	unsigned int token;
 	unsigned int offset;
