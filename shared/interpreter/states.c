@@ -18,6 +18,19 @@ STATE (test) {
 	NEXTSTATE(exec_ptr);
 }
 
+STATE (echo) {
+	uint8_t *uni_str;
+	char *io;
+	size_t uni_size;
+
+	++exec_ptr;
+	POPSETSTRING(uni_str, uni_size, exec_ptr);
+	printf(io = u8_strconv_to_locale(uni_str));
+	free(io);
+	free(uni_str);
+	POINTEDSTATE(exec_ptr);
+}
+
 STATE (awake) {
 	pthread_create(&state->awareness, NULL,
 		       threaded_awareness_run, NULL);
@@ -129,7 +142,7 @@ STATE (init_pack) {
 STATE (load_pack) {
 	uint32_t pkg_num;
 	uint32_t action_max;
-	char *path;
+	uint8_t *path;
 	size_t path_size;
 
 	++exec_ptr;
@@ -146,7 +159,7 @@ STATE (load_pack) {
 STATE (load_action) {
 	uint32_t pkg_num;
 	uint32_t id;
-	char *name;
+	uint8_t *name;
 	size_t name_size;
 
 	++exec_ptr;

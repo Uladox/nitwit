@@ -5,7 +5,9 @@
 
 #include "../practise/ntwt_practise.h"
 
-enum { NTWT_OP_READ, NTWT_OP_END, NTWT_OP_CONTEXT, NTWT_OP_TEST,
+enum { NTWT_OP_READ, NTWT_OP_END, NTWT_OP_CONTEXT,
+/* IO operations */
+       NTWT_OP_TEST, NTWT_OP_ECHO,
 /* Awareness operations */
        NTWT_OP_AWAKE,
 /* Practise  operations */

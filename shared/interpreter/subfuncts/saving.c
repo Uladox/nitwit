@@ -17,7 +17,7 @@ static void save_packages_actions(struct ntwt_package *pack, FILE *image)
 		fwrite(action_args, sizeof(unsigned int),
 		       2, image);
 		fwrite(action->name, sizeof(char),
-		       strlen(action->name) + 1, image);
+		       u8_strlen(action->name) + 1, image);
 	}
 
 }
@@ -44,7 +44,7 @@ static void save_packages(struct ntwt_instance *state, FILE *image)
 		fwrite(load_pack_op, sizeof(char), 1, image);
 		fwrite(pack_args, sizeof(unsigned int), 2, image);
 		fwrite(pack->location, sizeof(char),
-		       strlen(pack->location) + 1, image);
+		       u8_strlen(pack->location) + 1, image);
 		save_packages_actions(pack, image);
 	}
 }

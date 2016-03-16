@@ -16,9 +16,9 @@
 
 #define POPSETSTRING(VARIABLE, SIZE, POINTER)				\
 	do {								\
-	        SIZE = strlen(POINTER) + 1;				\
+	        SIZE = u8_strlen((uint8_t *) POINTER) + 1;		\
 		VARIABLE = malloc(SIZE);				\
-		strcpy(VARIABLE, POINTER);				\
+		u8_strcpy(VARIABLE, (uint8_t *) POINTER);		\
 	        POINTER += SIZE;					\
 	} while (0)
 #define POP(TYPE, POINTER)						\

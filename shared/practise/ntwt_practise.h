@@ -10,7 +10,7 @@ struct ntwt_action {
 	char loaded;
 	uint32_t package_num;
 	uint32_t id;
-	char *name;
+	uint8_t *name;
 	void (*funct)(double *,
 		      double *,
 		      double *);
@@ -32,7 +32,7 @@ struct ntwt_package {
 	char loaded;
 	uint32_t package_num;
 
-	char *location;
+	uint8_t *location;
 	void *handle;
 	uint32_t action_ptr;
 	uint32_t action_max;
@@ -41,7 +41,7 @@ struct ntwt_package {
 
 extern struct ntwt_package ntwt_std_package;
 
-struct ntwt_action *ntwt_action_new(char *name,
+struct ntwt_action *ntwt_action_new(uint8_t *name,
 				    uint32_t package_num,
 				    uint32_t id,
 				    void (*funct)(double *,
@@ -57,11 +57,11 @@ void ntwt_practise_load(struct ntwt_practise *p,
 void ntwt_instance_load_package(struct ntwt_instance *instance,
 				uint32_t package_num,
 				uint32_t action_max,
-				char *location);
+				uint8_t *location);
 
 void ntwt_package_load_action(struct ntwt_package *package,
 			      uint32_t id,
-			      char *action_name);
+			      uint8_t *action_name);
 
 void ntwt_practise_run(struct ntwt_practise *p);
 

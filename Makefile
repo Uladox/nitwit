@@ -53,7 +53,8 @@ $(RELEASE_PATH)/$(1): $(addprefix $(RELEASE_PATH)/,$(2)) $(4)
 	gcc -std=gnu99 -Ofast -Wall -Werror $$^ -o $$@ $(3)
 endef
 
-$(eval $(call make-execs,nitwit_server,$(SERVER_FILES),-pthread -ldl,));
+$(eval $(call make-execs,nitwit_server,$(SERVER_FILES),-lunistring \
+	-pthread -ldl,));
 $(eval $(call make-execs,nitwit_client,$(CLIENT_FILES),-lunistring));
 
 define make-objs

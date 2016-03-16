@@ -274,6 +274,9 @@ static struct ntwt_asm_expr *term(struct ntwt_lex_info *info,
 		else if (!u8_strncmp(info->lexme, (uint8_t *) u8"END",
 				     info->lexlen))
 			expr->contents.op_code = NTWT_OP_END;
+		else if (!u8_strncmp(info->lexme, (uint8_t *) u8"ECHO",
+				     info->lexlen))
+			expr->contents.op_code = NTWT_OP_ECHO;
 		else {
 			fprintf(stderr,
 				"Error: unrecognized op code on line %u\n",

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <locale.h>
 
 #include "../shared/socket/ntwt_socket.h"
 #include "../shared/interpreter/ntwt_interpreter.h"
@@ -67,9 +68,11 @@ int main(int argc, char *args[])
 	long image_size;
 	char *image_code;
 
+	setlocale(LC_ALL, "");
+
 	state.practises = calloc(100, sizeof(struct ntwt_practise));
 	ntwt_practise_load(state.practises,
-			   ntwt_action_new("yell", 0, 0, yell),
+			   ntwt_action_new((uint8_t *) u8"yell", 0, 0, yell),
 			   0.5, 0.5, 0.5);
 	state.context = NULL;
 

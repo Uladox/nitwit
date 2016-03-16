@@ -25,14 +25,14 @@ static struct ntwt_action ntwt_built_in_actions[] = {
 	[0] = { .loaded = 1,
 		.package_num = 0,
 		.id = 0,
-		.name = "test",
+		.name = (uint8_t *) u8"test",
 		.funct = test_fnct }
 };
 
 struct ntwt_package ntwt_std_package = {
 	.loaded = 1,
 	.package_num = 0,
-	.location = "",
+	.location = (uint8_t *) u8"",
 	.handle = NULL,
 	.action_ptr = ARRAY_SIZE(ntwt_built_in_actions),
 	.action_max = ARRAY_SIZE(ntwt_built_in_actions),
@@ -55,7 +55,7 @@ struct ntwt_practise *ntwt_practise_new(struct ntwt_action *action,
 	return prac;
 }
 
-struct ntwt_action *ntwt_action_new(char *name,
+struct ntwt_action *ntwt_action_new(uint8_t *name,
 				    uint32_t package_num,
 				    uint32_t id,
 				    void (*funct)(double *,
@@ -75,7 +75,7 @@ struct ntwt_action *ntwt_action_new(char *name,
 void ntwt_instance_load_package(struct ntwt_instance *instance,
 				uint32_t package_num,
 				uint32_t action_max,
-				char *location)
+				uint8_t *location)
 {
 	struct ntwt_package *package;
 
@@ -86,7 +86,7 @@ void ntwt_instance_load_package(struct ntwt_instance *instance,
 		exit(1);
 	}
 	package = instance->packages + package_num;
-	package->handle = dlopen(location, RTLD_LAZY);
+	package->handle = dlopen((char *) location, RTLD_LAZY);
 	if (!package->handle) {
 		fprintf(stderr,
 			"Error loading package from \"%s\": ",
@@ -106,7 +106,7 @@ void ntwt_instance_load_package(struct ntwt_instance *instance,
 
 void ntwt_package_load_action(struct ntwt_package *package,
 			      uint32_t id,
-			      char *action_name)
+			      uint8_t *action_name)
 {
 	struct ntwt_action *action;
 	char *error;
@@ -118,7 +118,7 @@ void ntwt_package_load_action(struct ntwt_package *package,
 		exit(1);
 	}
 	action = package->actions + id;
-	action->funct = dlsym(package, action_name);
+	action->funct = dlsym(package, (char *) action_name);
 	error = dlerror();
 	if (error) {
 		fprintf(stderr,

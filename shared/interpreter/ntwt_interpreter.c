@@ -2,8 +2,12 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistr.h>
+#include <uniconv.h>
 
 #include "ntwt_interpreter.h"
+
+#include "../unicode/ntwt_unihelpers.h"
 
 #include "macros/define.h"
 
@@ -16,6 +20,7 @@ const unsigned int *restrict const ntwt_op_args[] = {
 	[NTWT_OP_END]         = (unsigned int []) { 0 },
 	[NTWT_OP_CONTEXT]     = (unsigned int []) { 1, NTWT_CHAR },
 	[NTWT_OP_TEST]        = (unsigned int []) { 0 },
+	[NTWT_OP_ECHO]        = (unsigned int []) { 1, NTWT_STRING },
 	[NTWT_OP_AWAKE]       = (unsigned int []) { 0 },
 	[NTWT_OP_INIT_PRAC]   = (unsigned int []) { 1, NTWT_UINT },
 	[NTWT_OP_LOAD_PRAC]   = (unsigned int []) { 6,
@@ -59,6 +64,7 @@ void ntwt_interprete(struct ntwt_instance *state, const char code[])
 		[NTWT_OP_END]         = &&s_end,
 		[NTWT_OP_CONTEXT]     = &&s_context,
 		[NTWT_OP_TEST]        = &&s_test,
+		[NTWT_OP_ECHO]        = &&s_echo,
 		[NTWT_OP_AWAKE]       = &&s_awake,
 		[NTWT_OP_INIT_PRAC]   = &&s_init_prac,
 		[NTWT_OP_LOAD_PRAC]   = &&s_load_prac,
