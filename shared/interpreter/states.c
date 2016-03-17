@@ -18,6 +18,15 @@ STATE (test) {
 	NEXTSTATE(exec_ptr);
 }
 
+#if ASSUME_UTF8
+STATE(echo) {
+	++exec_ptr;
+	printf("%s\n", exec_ptr);
+	exec_ptr += u8_strlen((uint8_t *) exec_ptr) + 1;
+	POINTEDSTATE(exec_ptr);
+}
+#else
+#warning "Less efficient if your locale is utf8."
 STATE (echo) {
 	uint8_t *uni_str;
 	char *io;
@@ -25,11 +34,12 @@ STATE (echo) {
 
 	++exec_ptr;
 	POPSETSTRING(uni_str, uni_size, exec_ptr);
-	printf(io = u8_strconv_to_locale(uni_str));
+	printf("%s\n", io = u8_strconv_to_locale(uni_str));
 	free(io);
 	free(uni_str);
 	POINTEDSTATE(exec_ptr);
 }
+#endif
 
 STATE (awake) {
 	pthread_create(&state->awareness, NULL,

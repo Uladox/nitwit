@@ -118,7 +118,7 @@ static void lex(struct ntwt_lex_info *info)
 	info->offset = 0;
 	info->lexme = current;
 
-	u8_mbtouc_unsafe (&puc, current, info->units);
+	u8_mbtouc_unsafe(&puc, current, info->units);
 	switch (puc) {
 	case '\0':
 		info->token = NTWT_EOI;
@@ -264,6 +264,7 @@ static struct ntwt_asm_expr *term(struct ntwt_lex_info *info,
 	case NTWT_STRING:
 		expr->contents.string = malloc(expr->size = info->lexlen + 1);
 		u8_strncpy(expr->contents.string, info->lexme, info->lexlen);
+		expr->contents.string[info->lexlen] = '\0';
 		break;
 	case NTWT_OP_CODE:
 		expr->size = sizeof(char);
@@ -297,12 +298,24 @@ static struct ntwt_asm_expr *term(struct ntwt_lex_info *info,
 static void ntwt_asm_term_bytecode(struct ntwt_asm_expr *term,
 				   char **code_ptr)
 {
-	if (unlikely(term->type == NTWT_STRING))
-		memcpy(*code_ptr, term->contents.string,
-		       term->size);
-	else
-		memcpy(*code_ptr, &term->contents, term->size);
-
+	switch (term->type) {
+	case NTWT_UINT:
+		memcpy(*code_ptr, &term->contents.integer, term->size);
+		break;
+	case NTWT_DOUBLE:
+		memcpy(*code_ptr, &term->contents.decimal, term->size);
+		break;
+	case NTWT_STRING:
+		memcpy(*code_ptr, term->contents.string, term->size);
+		break;
+	case NTWT_OP_CODE:
+		memcpy(*code_ptr, &term->contents.op_code, term->size);
+		break;
+	default:
+		fprintf(stderr,
+			"Error: Unrecognized type in asm tree to bytecode, %u.\n",
+			term->type);
+	}
 	*code_ptr += term->size;
 }
 
@@ -319,8 +332,6 @@ void ntwt_asm_program_bytecode(struct ntwt_asm_program *program,
 			       char **code, size_t *old_size,
 			       unsigned int *message_size)
 {
-	char *code_ptr = *code;
-
 	*message_size = program->size;
 	if (unlikely(program->size > *old_size)) {
 		free(*code);
@@ -328,6 +339,7 @@ void ntwt_asm_program_bytecode(struct ntwt_asm_program *program,
 		*old_size = program->size;
 	}
 
+	char *code_ptr = *code;
 	struct ntwt_asm_expr *command;
 
 	for (command = program->expr;
