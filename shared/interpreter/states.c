@@ -28,15 +28,12 @@ STATE(echo) {
 #else
 #warning "Less efficient if your locale is utf8."
 STATE (echo) {
-	uint8_t *uni_str;
 	char *io;
-	size_t uni_size;
 
 	++exec_ptr;
-	POPSETSTRING(uni_str, uni_size, exec_ptr);
-	printf("%s\n", io = u8_strconv_to_locale(uni_str));
+	printf("%s\n", io = u8_strconv_to_locale((uint8_t *) exec_ptr));
 	free(io);
-	free(uni_str);
+	exec_ptr += u8_strlen((uint8_t *) exec_ptr) + 1;
 	POINTEDSTATE(exec_ptr);
 }
 #endif

@@ -47,12 +47,6 @@ ifndef ASSUME_UTF8
 ASSUME_UTF8 = 1
 endif
 
-.PHONY: clean
-clean:
-	rm -f $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client \
-	$(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client \
-	$(DEBUG_PATH)/*.o $(RELEASE_PATH)/*.o
-
 debug: $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client
 release: $(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client
 
@@ -80,3 +74,9 @@ endef
 
 $(foreach src,$(SRC_FILES),$(eval $(call make-objs,$(src), \
 	-DASSUME_UTF8=$(ASSUME_UTF8))));
+
+.PHONY: clean
+clean:
+	rm -f $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client \
+	$(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client \
+	$(DEBUG_PATH)/*.o $(RELEASE_PATH)/*.o
