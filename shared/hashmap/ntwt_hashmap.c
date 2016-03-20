@@ -100,9 +100,9 @@ static struct ntwt_hashentry *new_hashentry(void *key, uint32_t key_size,
 }
 
 struct ntwt_hashmap *ntwt_hashmap_new(unsigned int sequence,
-				      int (*compare)(void *key1,
-						     uint32_t key1_size,
-						     void *key2,
+				      int (*compare)(const void *entry_key1,
+						     uint32_t entry_key1_size,
+						     const void *key2,
 						     uint32_t key2_size),
 				      void (*free_contents)(void *key,
 							    void *storage))
@@ -214,13 +214,13 @@ void ntwt_hashmap_remove(struct ntwt_hashmap *map, void *key,
 	}
 }
 
-void *ntwt_hashmap_get(struct ntwt_hashmap *map, void *key, uint32_t key_size)
+void *ntwt_hashmap_get(struct ntwt_hashmap *map, const void *key, uint32_t key_size)
 {
 	struct ntwt_hashentry *entry;
 	unsigned int row;
 
 	row = murmur3_32(key, key_size, HASH_SEED) % map->bin_num;
-
+	printf("row: %u\n", row);
 	entry = map->bins[row].first;
 	while (entry) {
 		if (map->compare(entry->key, entry->key_size, key, key_size))

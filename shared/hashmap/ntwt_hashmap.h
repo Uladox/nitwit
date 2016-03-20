@@ -33,8 +33,8 @@ struct ntwt_hashbin {
 };
 
 struct ntwt_hashmap {
-	int (*compare)(void *key1, uint32_t key1_size,
-		       void *key2, uint32_t key2_size);
+	int (*compare)(const void *entry_key, uint32_t entry_key_size,
+		       const void *key, uint32_t key_size);
 	void (*free_contents)(void *key, void *storage);
 	unsigned int bin_num;
 	int entry_num;
@@ -43,10 +43,10 @@ struct ntwt_hashmap {
 };
 
 struct ntwt_hashmap *ntwt_hashmap_new(unsigned int sequence,
-				      int (*compare)(void *key1,
-						     uint32_t key1_size,
-						     void *key2,
-						     uint32_t key2_size),
+				      int (*compare)(const void *entry_key,
+						     uint32_t entry_key_size,
+						     const void *key,
+						     uint32_t key_size),
 				      void (*free_contents)(void *key,
 							    void *storage));
 
@@ -59,6 +59,6 @@ int ntwt_hashmap_add(struct ntwt_hashmap *hashmap,
 void ntwt_hashmap_remove(struct ntwt_hashmap *map, void *key,
 			 uint32_t key_size);
 
-void *ntwt_hashmap_get(struct ntwt_hashmap *map, void *key, uint32_t key_size);
+void *ntwt_hashmap_get(struct ntwt_hashmap *map, const void *key, uint32_t key_size);
 
 #endif

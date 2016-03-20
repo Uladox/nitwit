@@ -6,6 +6,7 @@
 #include <unistr.h>
 #include "../nitwit_macros.h"
 #include "../interpreter/ntwt_interpreter.h"
+#include "../../gen/output/ntwt_op_map.h"
 
 static struct ntwt_asm_expr *command(struct ntwt_lex_info *info,
 				     struct ntwt_asm_expr **stack);
@@ -268,22 +269,33 @@ static struct ntwt_asm_expr *term(struct ntwt_lex_info *info,
 		break;
 	case NTWT_OP_CODE:
 		expr->size = sizeof(char);
-		/* Note: Replace with proper hashmap */
-		if (!u8_strncmp(info->lexme, (uint8_t *) u8"TEST",
-				info->lexlen))
-			expr->contents.op_code = NTWT_OP_TEST;
-		else if (!u8_strncmp(info->lexme, (uint8_t *) u8"END",
-				     info->lexlen))
-			expr->contents.op_code = NTWT_OP_END;
-		else if (!u8_strncmp(info->lexme, (uint8_t *) u8"ECHO",
-				     info->lexlen))
-			expr->contents.op_code = NTWT_OP_ECHO;
-		else {
+
+		char *result = ntwt_hashmap_get(&ntwt_op_map, info->lexme,
+						info->lexlen);
+		if (!result) {
 			fprintf(stderr,
 				"Error: unrecognized op code on line %u\n",
 				info->lineno);
 			exit(1);
 		}
+
+		expr->contents.op_code = *result;
+		/* /\* Note: Replace with proper hashmap *\/ */
+		/* if (!u8_strncmp(info->lexme, (uint8_t *) u8"TEST", */
+		/* 		info->lexlen)) */
+		/* 	expr->contents.op_code = NTWT_OP_TEST; */
+		/* else if (!u8_strncmp(info->lexme, (uint8_t *) u8"END", */
+		/* 		     info->lexlen)) */
+		/* 	expr->contents.op_code = NTWT_OP_END; */
+		/* else if (!u8_strncmp(info->lexme, (uint8_t *) u8"ECHO", */
+		/* 		     info->lexlen)) */
+		/* 	expr->contents.op_code = NTWT_OP_ECHO; */
+		/* else { */
+		/* 	fprintf(stderr, */
+		/* 		"Error: unrecognized op code on line %u\n", */
+		/* 		info->lineno); */
+		/* 	exit(1); */
+		/* } */
 		break;
 	default:
 		fprintf(stderr,
