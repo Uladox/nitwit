@@ -83,6 +83,7 @@ int main(int argc, char **args)
 	fprintf(output, "\n#include \"ntwt_op_map_closer.c\"\n");
 
 	ntwt_hashmap_free(map);
+	fclose(output);
 
 	return 0;
 }
