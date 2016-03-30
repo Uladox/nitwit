@@ -9,16 +9,8 @@
 #include <locale.h>
 #include <uniconv.h>
 
-#include "../shared/unicode/ntwt_unihelpers.h"
-#include "../shared/socket/ntwt_socket.h"
-#include "../shared/interpreter/ntwt_interpreter.h"
-#include "../shared/asm/ntwt_asm_compiler.h"
-
-static void compile_and_send(const char *charset, struct ntwt_connection *sock,
-			     struct ntwt_asm_program *program,
-			     struct ntwt_asm_expr **stack,
-			     char **io_buff, size_t *io_size,
-			     uint32_t *msg_len);
+#define NTWT_SHORT_NAMES
+#include "client_io.h"
 
 int main(void)
 {
@@ -38,13 +30,13 @@ int main(void)
 	};
 
 
-	sock = ntwt_connection_connect(path);
+	sock = connection_connect(path);
 	if (!sock)
 		return 0;
-	while (!ntwt_connection_end_check(sock)) {
+	while (!connection_end_check(sock)) {
 		ssize_t tmp;
 
-		printf("> ");
+		prompt();
 
 		/* tmp holds -1 if an error occurs or C-d is pressed, so we
 		 * exit the program if that happens, however, we need a
@@ -63,49 +55,10 @@ int main(void)
 	}
 	putchar('\n');
 	free(io_buff);
-#if !ASSUME_UTF8
-	free(uni_buff);
-#endif
-	ntwt_connection_free(sock);
+	free_conversions();
+	connection_free(sock);
 	if (program.expr)
-		ntwt_asm_expr_free(program.expr);
+		asm_expr_free(program.expr);
 	return 0;
 }
 
-#if ASSUME_UTF8
-static void compile_and_send(const char *charset, struct ntwt_connection *sock,
-			     struct ntwt_asm_program *program,
-			     struct ntwt_asm_expr **stack,
-			     char **io_buff, size_t *io_size,
-			     uint32_t *msg_len)
-{
-	ntwt_asm_recycle(stack, program->expr);
-	ntwt_asm_statements(program, stack, (uint8_t *) *io_buff);
-	ntwt_asm_program_bytecode(program, io_buff,
-				  io_size, msg_len);
-
-	ntwt_connection_send(sock, msg_len, sizeof(*msg_len));
-	ntwt_connection_send(sock, *io_buff, *msg_len);
-}
-#else
-#warning "Less efficient if your locale is utf8."
-uint8_t *uni_buff = NULL;
-size_t uni_size = 0;
-
-static void compile_and_send(const char *charset, struct ntwt_connection *sock,
-			     struct ntwt_asm_program *program,
-			     struct ntwt_asm_expr **stack,
-			     char **io_buff, size_t *io_size,
-			     uint32_t *msg_len)
-{
-	get_u8(charset, *io_buff, *msg_len, &uni_buff, &uni_size);
-
-	ntwt_asm_recycle(stack, program->expr);
-	ntwt_asm_statements(program, stack, uni_buff);
-	ntwt_asm_program_bytecode(program, io_buff,
-				  io_size, msg_len);
-
-	ntwt_connection_send(sock, msg_len, sizeof(*msg_len));
-	ntwt_connection_send(sock, *io_buff, *msg_len);
-}
-#endif

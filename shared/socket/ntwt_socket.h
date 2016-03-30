@@ -54,4 +54,17 @@ int ntwt_connection_read(struct ntwt_connection *cntn,
 void ntwt_connection_send(struct ntwt_connection *cntn,
 			  const void *msg, uint32_t msg_size);
 
+#if defined NTWT_SHORT_NAMES || defined NTWT_SOCKET_SHORT_NAMES
+#define connecter_new(...) ntwt_connecter_new(__VA_ARGS__)
+#define connecter_free(...) ntwt_connecter_free(__VA_ARGS__)
+#define connection_connect(...) ntwt_connection_connect(__VA_ARGS__)
+#define connecter_accept(...) ntwt_connecter_accept(__VA_ARGS__)
+#define connection_free(...) ntwt_connection_free(__VA_ARGS__)
+#define connection_end_check(...) ntwt_connection_end_check(__VA_ARGS__)
+#define connection_end_mutate(...) ntwt_connection_end_mutate(__VA_ARGS__)
+#define connection_kill(...) ntwt_connection_kill(__VA_ARGS__)
+#define connection_read(...) ntwt_connection_read(__VA_ARGS__)
+#define connection_send(...) ntwt_connection_send(__VA_ARGS__)
+#endif
+
 #endif

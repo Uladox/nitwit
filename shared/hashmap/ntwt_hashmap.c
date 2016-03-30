@@ -14,10 +14,12 @@
  *    along with nitwit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ntwt_hashmap.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+#define NTWT_SHORT_NAMES
+#include "ntwt_hashmap.h"
 
 #define BIN_MAX_DENSITY 5
 #define HASH_SEED 37
@@ -87,7 +89,8 @@ uint32_t murmur3_32(const char *key, uint32_t len, uint32_t seed)
 	return hash;
 }
 
-static struct ntwt_hashentry *new_hashentry(void *key, uint32_t key_size,
+static struct ntwt_hashentry *new_hashentry(void *key,
+					    uint32_t key_size,
 					    void *storage)
 {
 	struct ntwt_hashentry *entry = malloc(sizeof(*entry));
@@ -99,13 +102,13 @@ static struct ntwt_hashentry *new_hashentry(void *key, uint32_t key_size,
 	return entry;
 }
 
-struct ntwt_hashmap *ntwt_hashmap_new(unsigned int sequence,
-				      int (*compare)(const void *entry_key1,
-						     uint32_t entry_key1_size,
-						     const void *key2,
-						     uint32_t key2_size),
-				      void (*free_contents)(void *key,
-							    void *storage))
+struct ntwt_hashmap *hashmap_new(unsigned int sequence,
+			    int (*compare)(const void *entry_key1,
+					   uint32_t entry_key1_size,
+					   const void *key2,
+					   uint32_t key2_size),
+			    void (*free_contents)(void *key,
+						  void *storage))
 {
 	struct ntwt_hashmap *map = malloc(sizeof(*map));
 	struct ntwt_hashbin *bin;
@@ -127,7 +130,7 @@ struct ntwt_hashmap *ntwt_hashmap_new(unsigned int sequence,
 	return map;
 }
 
-void ntwt_hashmap_free(struct ntwt_hashmap *map)
+void hashmap_free(struct ntwt_hashmap *map)
 {
 	struct ntwt_hashbin *bin = map->bins;
 
@@ -182,8 +185,8 @@ int ntwt_hashmap_add(struct ntwt_hashmap *map,
 	return NTWT_HASHMAP_ADDED;
 }
 
-void ntwt_hashmap_remove(struct ntwt_hashmap *map, void *key,
-			 uint32_t key_size)
+void hashmap_remove(struct ntwt_hashmap *map, void *key,
+		    uint32_t key_size)
 {
 	struct ntwt_hashentry *entry;
 	unsigned int row;
@@ -214,13 +217,12 @@ void ntwt_hashmap_remove(struct ntwt_hashmap *map, void *key,
 	}
 }
 
-void *ntwt_hashmap_get(struct ntwt_hashmap *map, const void *key, uint32_t key_size)
+void *hashmap_get(struct ntwt_hashmap *map, const void *key, uint32_t key_size)
 {
 	struct ntwt_hashentry *entry;
 	unsigned int row;
 
 	row = murmur3_32(key, key_size, HASH_SEED) % map->bin_num;
-	printf("row: %u\n", row);
 	entry = map->bins[row].first;
 	while (entry) {
 		if (map->compare(entry->key, entry->key_size, key, key_size))
@@ -231,8 +233,7 @@ void *ntwt_hashmap_get(struct ntwt_hashmap *map, const void *key, uint32_t key_s
 }
 
 /* Adds to a bin something already in the hashmap during a rehash */
-static void rehash_add(struct ntwt_hashbin *bin,
-		       struct ntwt_hashentry *entry)
+static void rehash_add(struct ntwt_hashbin *bin, struct ntwt_hashentry *entry)
 {
 	struct ntwt_hashentry *tmp = bin->first;
 

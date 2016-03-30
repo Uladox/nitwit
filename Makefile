@@ -1,6 +1,7 @@
 SRC_FILES = \
 	server/ntwt_server.c \
 	client/ntwt_client.c \
+	client/client_io.c \
 	shared/socket/ntwt_socket.c \
 	shared/practise/ntwt_practise.c \
 	shared/interpreter/ntwt_interpreter.c \
@@ -24,6 +25,7 @@ SERVER_FILES = \
 
 CLIENT_FILES = \
 	ntwt_client.o \
+	client_io.o \
 	ntwt_socket.o \
 	ntwt_asm_compiler.o \
 	ntwt_unihelpers.o \
@@ -35,6 +37,7 @@ ntwt_server.o = \
 	shared/interpreter/ntwt_interpreter.h
 
 ntwt_client.o = \
+	client/client_io.h \
 	shared/socket/ntwt_socket.h \
 	shared/interpreter/ntwt_interpreter.h \
 	shared/asm/ntwt_asm_compiler.h \

@@ -23,16 +23,6 @@ struct ntwt_asm_expr {
 	} contents;
 };
 
-struct ntwt_lex_info {
-	const uint8_t *lexme;
-	size_t lexlen;
-	size_t units;
-	unsigned int lineno;
-	unsigned int token;
-	unsigned int offset;
-};
-
-
 void ntwt_asm_statements(struct ntwt_asm_program *program,
 			 struct ntwt_asm_expr **stack,
 			 const uint8_t *code);
@@ -45,5 +35,12 @@ void ntwt_asm_recycle(struct ntwt_asm_expr **stack,
 		      struct ntwt_asm_expr *top);
 
 void ntwt_asm_expr_free(struct ntwt_asm_expr *expr);
+
+#if defined NTWT_SHORT_NAMES || defined NTWT_ASM_COMPILER_SHORT_NAMES
+#define asm_statements(...) ntwt_asm_statements(__VA_ARGS__)
+#define asm_program_bytecode(...) ntwt_asm_program_bytecode(__VA_ARGS__)
+#define asm_recycle(...) ntwt_asm_recycle(__VA_ARGS__)
+#define asm_expr_free(...) ntwt_asm_expr_free(__VA_ARGS__)
+#endif
 
 #endif

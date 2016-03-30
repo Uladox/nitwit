@@ -1,20 +1,31 @@
-#include "ntwt_asm_compiler.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include <unistr.h>
+
+#define NTWT_SHORT_NAMES
+#include "ntwt_asm_compiler.h"
 #include "../nitwit_macros.h"
 #include "../interpreter/ntwt_interpreter.h"
 #include "../../gen/output/ntwt_op_map.h"
 
-static struct ntwt_asm_expr *command(struct ntwt_lex_info *info,
-				     struct ntwt_asm_expr **stack);
+struct lex_info {
+	const uint8_t *lexme;
+	size_t lexlen;
+	size_t units;
+	unsigned int lineno;
+	unsigned int token;
+	unsigned int offset;
+};
 
-static struct ntwt_asm_expr *term(struct ntwt_lex_info *info,
+static struct ntwt_asm_expr *command(struct lex_info *info,
+				struct ntwt_asm_expr **stack);
+
+static struct ntwt_asm_expr *term(struct lex_info *info,
 				  struct ntwt_asm_expr **stack);
 
-static void lex_string(struct ntwt_lex_info *info, const uint8_t *current)
+static void lex_string(struct lex_info *info, const uint8_t *current)
 {
 	int backslashed = 0;
 	while (1) {
@@ -46,7 +57,7 @@ static void lex_string(struct ntwt_lex_info *info, const uint8_t *current)
 	}
 }
 
-static void lex_num(struct ntwt_lex_info *info, const uint8_t *current)
+static void lex_num(struct lex_info *info, const uint8_t *current)
 {
 	unsigned int num_type = NTWT_UINT;
 	int period = 0;
@@ -90,7 +101,7 @@ static void lex_num(struct ntwt_lex_info *info, const uint8_t *current)
 	}
 }
 
-static void lex_op_code(struct ntwt_lex_info *info, const uint8_t *current)
+static void lex_op_code(struct lex_info *info, const uint8_t *current)
 {
 	while (!isspace(*current) && *current != ';') {
 		++current;
@@ -101,7 +112,7 @@ static void lex_op_code(struct ntwt_lex_info *info, const uint8_t *current)
 	info->token = NTWT_OP_CODE;
 }
 
-static void lex(struct ntwt_lex_info *info)
+static void lex(struct lex_info *info)
 {
 	const uint8_t *current = info->lexme;
 	ucs4_t puc;
@@ -156,12 +167,12 @@ static void lex(struct ntwt_lex_info *info)
 }
 
 
-static inline int match(struct ntwt_lex_info *info, unsigned int token)
+static inline int match(struct lex_info *info, unsigned int token)
 {
 	return info->token == token;
 }
 
-static inline void advance(struct ntwt_lex_info *info)
+static inline void advance(struct lex_info *info)
 {
 	lex(info);
 }
@@ -177,12 +188,12 @@ static struct ntwt_asm_expr *pop(struct ntwt_asm_expr **stack)
 	return malloc(sizeof(**stack));
 }
 
-void ntwt_asm_statements(struct ntwt_asm_program *program,
-			 struct ntwt_asm_expr **stack,
-			 const uint8_t *code)
+void asm_statements(struct ntwt_asm_program *program,
+		    struct ntwt_asm_expr **stack,
+		    const uint8_t *code)
 {
 	struct ntwt_asm_expr *expr;
-	struct ntwt_lex_info info = {
+	struct lex_info info = {
 		.lexme = code,
 		.lexlen = 0,
 		.units = u8_strlen(code),
@@ -217,7 +228,7 @@ void ntwt_asm_statements(struct ntwt_asm_program *program,
 	}
 }
 
-static struct ntwt_asm_expr *command(struct ntwt_lex_info *info,
+static struct ntwt_asm_expr *command(struct lex_info *info,
 				     struct ntwt_asm_expr **stack)
 {
 	struct ntwt_asm_expr *expr = pop(stack);
@@ -245,7 +256,7 @@ static struct ntwt_asm_expr *command(struct ntwt_lex_info *info,
 	return expr;
 }
 
-static struct ntwt_asm_expr *term(struct ntwt_lex_info *info,
+static struct ntwt_asm_expr *term(struct lex_info *info,
 				  struct ntwt_asm_expr **stack)
 {
 	struct ntwt_asm_expr *expr = pop(stack);
@@ -280,22 +291,6 @@ static struct ntwt_asm_expr *term(struct ntwt_lex_info *info,
 		}
 
 		expr->contents.op_code = *result;
-		/* /\* Note: Replace with proper hashmap *\/ */
-		/* if (!u8_strncmp(info->lexme, (uint8_t *) u8"TEST", */
-		/* 		info->lexlen)) */
-		/* 	expr->contents.op_code = NTWT_OP_TEST; */
-		/* else if (!u8_strncmp(info->lexme, (uint8_t *) u8"END", */
-		/* 		     info->lexlen)) */
-		/* 	expr->contents.op_code = NTWT_OP_END; */
-		/* else if (!u8_strncmp(info->lexme, (uint8_t *) u8"ECHO", */
-		/* 		     info->lexlen)) */
-		/* 	expr->contents.op_code = NTWT_OP_ECHO; */
-		/* else { */
-		/* 	fprintf(stderr, */
-		/* 		"Error: unrecognized op code on line %u\n", */
-		/* 		info->lineno); */
-		/* 	exit(1); */
-		/* } */
 		break;
 	default:
 		fprintf(stderr,
@@ -307,8 +302,7 @@ static struct ntwt_asm_expr *term(struct ntwt_lex_info *info,
 	return expr;
 }
 
-static void ntwt_asm_term_bytecode(struct ntwt_asm_expr *term,
-				   char **code_ptr)
+static void asm_term_bytecode(struct ntwt_asm_expr *term, char **code_ptr)
 {
 	switch (term->type) {
 	case NTWT_UINT:
@@ -331,18 +325,17 @@ static void ntwt_asm_term_bytecode(struct ntwt_asm_expr *term,
 	*code_ptr += term->size;
 }
 
-static void ntwt_asm_command_bytecode(struct ntwt_asm_expr *command,
-				      char **code_ptr)
+static void asm_command_bytecode(struct ntwt_asm_expr *command, char **code_ptr)
 {
 	struct ntwt_asm_expr *term = command->contents.list;
 
 	for (; term; term = term->next)
-		ntwt_asm_term_bytecode(term, code_ptr);
+	        asm_term_bytecode(term, code_ptr);
 }
 
-void ntwt_asm_program_bytecode(struct ntwt_asm_program *program,
-			       char **code, size_t *old_size,
-			       unsigned int *message_size)
+void asm_program_bytecode(struct ntwt_asm_program *program,
+			  char **code, size_t *old_size,
+			  unsigned int *message_size)
 {
 	*message_size = program->size;
 	if (unlikely(program->size > *old_size)) {
@@ -356,11 +349,10 @@ void ntwt_asm_program_bytecode(struct ntwt_asm_program *program,
 
 	for (command = program->expr;
 	     command; command = command->next)
-		ntwt_asm_command_bytecode(command, &code_ptr);
+	        asm_command_bytecode(command, &code_ptr);
 }
 
-void ntwt_asm_recycle(struct ntwt_asm_expr **stack,
-		      struct ntwt_asm_expr *top)
+void asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *top)
 {
 	struct ntwt_asm_expr *expr = top;
 
@@ -370,7 +362,7 @@ void ntwt_asm_recycle(struct ntwt_asm_expr **stack,
 		if (expr->type == NTWT_STRING)
 			free(expr->contents.string);
 		else if (expr->type == NTWT_COMMAND)
-			ntwt_asm_recycle(stack, expr->contents.list);
+			asm_recycle(stack, expr->contents.list);
 		tmp = expr;
 		expr = expr->next;
 		tmp->next = *stack;
@@ -378,7 +370,7 @@ void ntwt_asm_recycle(struct ntwt_asm_expr **stack,
 	}
 }
 
-void ntwt_asm_expr_free(struct ntwt_asm_expr *expr)
+void asm_expr_free(struct ntwt_asm_expr *expr)
 {
 	while (expr) {
 		struct ntwt_asm_expr *tmp;
@@ -386,7 +378,7 @@ void ntwt_asm_expr_free(struct ntwt_asm_expr *expr)
 		if (expr->type == NTWT_STRING)
 			free(expr->contents.string);
 		else if (expr->type == NTWT_COMMAND)
-			ntwt_asm_expr_free(expr->contents.list);
+			asm_expr_free(expr->contents.list);
 		tmp = expr;
 		expr = expr->next;
 		free(tmp);
