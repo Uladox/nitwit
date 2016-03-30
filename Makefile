@@ -30,7 +30,7 @@ CLIENT_FILES = \
 	asm_compiler.o \
 	unihelpers.o \
 	hashmap.o \
-	op_map.o \
+	op_map.o
 
 server.o = \
 	shared/socket/socket.h \
@@ -106,4 +106,4 @@ $(foreach src,$(SRC_FILES),$(eval $(call make-objs,$(src), \
 clean:
 	rm -f $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client \
 	$(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client \
-	$(DEBUG_PATH)/*.o $(RELEASE_PATH)/*.o
+	$(DEBUG_PATH)/*.o $(RELEASE_PATH)/*.o gen/output/op_map.c
