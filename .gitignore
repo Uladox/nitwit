@@ -34,5 +34,5 @@
 /bin/debug/nitwit_client
 /bin/debug/nitwit_server
 /bin/release/nitwit_client
-gen/output/ntwt_op_map.c
+gen/output/op_map.c
 gen/programs/bin/map_gen

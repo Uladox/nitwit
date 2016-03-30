@@ -1,13 +1,12 @@
-#include "ntwt_practise.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <dlfcn.h>
 
+#include "practise.h"
 #include "../nitwit_macros.h"
-#include "../interpreter/ntwt_interpreter.h"
+#include "../interpreter/interpreter.h"
 
 static void test_fnct(double *can_happen,
 		      double *strength,

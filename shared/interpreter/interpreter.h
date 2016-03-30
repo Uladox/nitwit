@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "../practise/ntwt_practise.h"
+#include "../practise/practise.h"
 
 enum { NTWT_OP_READ, NTWT_OP_END, NTWT_OP_CONTEXT,
 /* IO operations */

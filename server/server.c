@@ -4,8 +4,8 @@
 #include <fcntl.h>
 #include <locale.h>
 
-#include "../shared/socket/ntwt_socket.h"
-#include "../shared/interpreter/ntwt_interpreter.h"
+#include "../shared/socket/socket.h"
+#include "../shared/interpreter/interpreter.h"
 
 void yell(double *can_happen,
 	  double *strength,

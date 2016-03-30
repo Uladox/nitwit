@@ -1,6 +1,6 @@
 #define NTWT_SHORT_NAMES
 #include "client_io.h"
-#include "../shared/unicode/ntwt_unihelpers.h"
+#include "../shared/unicode/unihelpers.h"
 
 
 #if ASSUME_UTF8

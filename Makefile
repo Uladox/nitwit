@@ -1,14 +1,14 @@
 SRC_FILES = \
-	server/ntwt_server.c \
-	client/ntwt_client.c \
+	server/server.c \
+	client/client.c \
 	client/client_io.c \
-	shared/socket/ntwt_socket.c \
-	shared/practise/ntwt_practise.c \
-	shared/interpreter/ntwt_interpreter.c \
-	shared/asm/ntwt_asm_compiler.c \
-	shared/unicode/ntwt_unihelpers.c \
-	shared/hashmap/ntwt_hashmap.c \
-	gen/output/ntwt_op_map.c
+	shared/socket/socket.c \
+	shared/practise/practise.c \
+	shared/interpreter/interpreter.c \
+	shared/asm/asm_compiler.c \
+	shared/unicode/unihelpers.c \
+	shared/hashmap/hashmap.c \
+	gen/output/op_map.c
 
 
 DEBUG_PATH = bin/debug
@@ -18,49 +18,49 @@ RELEASE_PATH = bin/release
 RELEASE_FILES = $(patsubst %,$(RELEASE_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
 
 SERVER_FILES = \
-	ntwt_server.o \
-	ntwt_socket.o \
-	ntwt_interpreter.o \
-	ntwt_practise.o
+	server.o \
+	socket.o \
+	interpreter.o \
+	practise.o
 
 CLIENT_FILES = \
-	ntwt_client.o \
+	client.o \
 	client_io.o \
-	ntwt_socket.o \
-	ntwt_asm_compiler.o \
-	ntwt_unihelpers.o \
-	ntwt_hashmap.o \
-	ntwt_op_map.o \
+	socket.o \
+	asm_compiler.o \
+	unihelpers.o \
+	hashmap.o \
+	op_map.o \
 
-ntwt_server.o = \
-	shared/socket/ntwt_socket.h \
-	shared/interpreter/ntwt_interpreter.h
+server.o = \
+	shared/socket/socket.h \
+	shared/interpreter/interpreter.h
 
-ntwt_client.o = \
+client.o = \
 	client/client_io.h \
-	shared/socket/ntwt_socket.h \
-	shared/interpreter/ntwt_interpreter.h \
-	shared/asm/ntwt_asm_compiler.h \
-	shared/unicode/ntwt_unihelpers.h
+	shared/socket/socket.h \
+	shared/interpreter/interpreter.h \
+	shared/asm/asm_compiler.h \
+	shared/unicode/unihelpers.h
 
-ntwt_interpreter.o = \
+interpreter.o = \
 	shared/interpreter/states.c \
 	shared/interpreter/subfuncts/saving.c \
 	shared/interpreter/subfuncts/threaded.c \
 	shared/interpreter/macros/define.h \
 	shared/interpreter/macros/undef.h
 
-ntwt_op_map = \
+op_map = \
 	gen/programs/bin/map_gen \
-	gen/output/ntwt_op_map.h \
-	gen/output/ntwt_op_map_opener.c \
-	gen/output/ntwt_op_map_closer.c \
+	gen/output/op_map.h \
+	gen/output/op_map_opener.c \
+	gen/output/op_map_closer.c \
 
 map_gen = \
 	gen/programs/map_gen.c \
-	shared/hashmap/ntwt_hashmap.h \
-	shared/hashmap/ntwt_hashmap.c \
-	shared/interpreter/ntwt_interpreter.h
+	shared/hashmap/hashmap.h \
+	shared/hashmap/hashmap.c \
+	shared/interpreter/interpreter.h
 
 ifndef ASSUME_UTF8
 ASSUME_UTF8 = 1
@@ -70,12 +70,12 @@ debug: $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client
 release: $(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client
 gen: gen/programs/bin/map_gen
 
-gen/output/ntwt_op_map.c: $(ntwt_op_map)
+gen/output/op_map.c: $(op_map)
 	(cd "gen/output" && ../programs/bin/map_gen);
 
 gen/programs/bin/map_gen: $(map_gen)
 	gcc -o gen/programs/bin/map_gen gen/programs/map_gen.c \
-	shared/hashmap/ntwt_hashmap.c -lunistring
+	shared/hashmap/hashmap.c -lunistring
 
 define make-execs
 $(DEBUG_PATH)/$(1): $(addprefix $(DEBUG_PATH)/,$(3))

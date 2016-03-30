@@ -1,4 +1,4 @@
-#include "ntwt_socket.h"
+#include "socket.h"
 
 struct ntwt_connecter *ntwt_connecter_new(char *path)
 {

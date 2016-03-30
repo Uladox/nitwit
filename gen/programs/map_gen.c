@@ -2,8 +2,8 @@
 #include <unistr.h>
 #include <inttypes.h>
 
-#include "../../shared/hashmap/ntwt_hashmap.h"
-#include "../../shared/interpreter/ntwt_interpreter.h"
+#include "../../shared/hashmap/hashmap.h"
+#include "../../shared/interpreter/interpreter.h"
 
 #define MAP_ADD_OP(MAP, KEY, STORAGE)					\
 	ntwt_hashmap_add(MAP, KEY, sizeof(KEY) - 1, &(char){ STORAGE })	\
@@ -64,9 +64,9 @@ static void map_write(struct ntwt_hashmap *map, FILE *output)
 
 int main(int argc, char **args)
 {
-	remove("../output/ntwt_op_map.c");
+	remove("../output/op_map.c");
 
-	FILE *output = fopen("ntwt_op_map.c", "ab");
+	FILE *output = fopen("op_map.c", "ab");
 	struct ntwt_hashmap *map = ntwt_hashmap_new(0, compare, free_contents);
 
 	fprintf(output, "%s%s%s%s%s%s",
@@ -75,12 +75,12 @@ int main(int argc, char **args)
 		"/* THIS IS A PRIME EXAMPLE OF PREMATURE OPTIMIZATION. */\n",
 		"/* ALL TO SAVE SOME RUN TIME MEMORY ALLOCATION... */\n",
 		"/* STILL WORTH IT! */\n",
-		"#include \"ntwt_op_map_opener.c\"\n");
+		"#include \"op_map_opener.c\"\n");
 	MAP_ADD_OP(map, u8"TEST", NTWT_OP_TEST);
 	MAP_ADD_OP(map, u8"END", NTWT_OP_END);
 	MAP_ADD_OP(map, u8"ECHO", NTWT_OP_ECHO);
 	map_write(map, output);
-	fprintf(output, "\n#include \"ntwt_op_map_closer.c\"\n");
+	fprintf(output, "\n#include \"op_map_closer.c\"\n");
 
 	ntwt_hashmap_free(map);
 	fclose(output);

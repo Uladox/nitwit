@@ -1,8 +1,8 @@
 #ifndef CLIENT_IO_H
 #define CLIENT_IO_H
 
-#include "../shared/socket/ntwt_socket.h"
-#include "../shared/asm/ntwt_asm_compiler.h"
+#include "../shared/socket/socket.h"
+#include "../shared/asm/asm_compiler.h"
 
 void compile_and_send(const char *charset, struct ntwt_connection *sock,
 		      struct ntwt_asm_program *program,

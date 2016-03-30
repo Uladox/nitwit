@@ -5,10 +5,10 @@
 #include <unistr.h>
 
 #define NTWT_SHORT_NAMES
-#include "ntwt_asm_compiler.h"
+#include "asm_compiler.h"
 #include "../nitwit_macros.h"
-#include "../interpreter/ntwt_interpreter.h"
-#include "../../gen/output/ntwt_op_map.h"
+#include "../interpreter/interpreter.h"
+#include "../../gen/output/op_map.h"
 
 struct lex_info {
 	const uint8_t *lexme;

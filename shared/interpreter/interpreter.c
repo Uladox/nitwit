@@ -5,9 +5,9 @@
 #include <unistr.h>
 #include <uniconv.h>
 
-#include "ntwt_interpreter.h"
+#include "interpreter.h"
 
-#include "../unicode/ntwt_unihelpers.h"
+#include "../unicode/unihelpers.h"
 
 #include "macros/define.h"
 

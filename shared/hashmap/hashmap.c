@@ -19,7 +19,7 @@
 #include <stdio.h>
 
 #define NTWT_SHORT_NAMES
-#include "ntwt_hashmap.h"
+#include "hashmap.h"
 
 #define BIN_MAX_DENSITY 5
 #define HASH_SEED 37
