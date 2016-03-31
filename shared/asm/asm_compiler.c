@@ -7,15 +7,14 @@
 #define NTWT_SHORT_NAMES
 #include "asm_compiler.h"
 #include "../nitwit_macros.h"
-#include "../interpreter/interpreter.h"
 #include "../../gen/output/op_map.h"
 
 struct lex_info {
 	const uint8_t *lexme;
+	enum ntwt_token token;
 	size_t lexlen;
 	size_t units;
 	unsigned int lineno;
-	unsigned int token;
 	unsigned int offset;
 };
 
@@ -59,7 +58,7 @@ static void lex_string(struct lex_info *info, const uint8_t *current)
 
 static void lex_num(struct lex_info *info, const uint8_t *current)
 {
-	unsigned int num_type = NTWT_UINT;
+	enum ntwt_token num_type = NTWT_UINT;
 	int period = 0;
 
 	while (1) {
@@ -166,12 +165,6 @@ static void lex(struct lex_info *info)
 	}
 }
 
-
-static inline int match(struct lex_info *info, unsigned int token)
-{
-	return info->token == token;
-}
-
 static inline void advance(struct lex_info *info)
 {
 	lex(info);
@@ -206,7 +199,7 @@ void asm_statements(struct ntwt_asm_program *program,
 	advance(&info);
 	expr = (program->expr = command(&info, stack));
 
-	if (unlikely(!match(&info, NTWT_SEMICOLON))) {
+	if (unlikely(info.token != NTWT_SEMICOLON)) {
 		fprintf(stderr,
 			"Error: Inserting missing semicolon on line %u\n",
 			info.lineno);
@@ -215,9 +208,9 @@ void asm_statements(struct ntwt_asm_program *program,
 
 	program->size += expr->size;
 	advance(&info);
-	while (!match(&info, NTWT_EOI)) {
+	while (info.token != NTWT_EOI) {
 		expr = (expr->next = command(&info, stack));
-		if (unlikely(!match(&info, NTWT_SEMICOLON))) {
+		if (unlikely(info.token != NTWT_SEMICOLON)) {
 			fprintf(stderr,
 				"Error: Insert missing semicolon on line %u\n",
 				info.lineno);
@@ -241,8 +234,8 @@ static struct ntwt_asm_expr *command(struct lex_info *info,
 	list = (expr->contents.list = term(info, stack));
 	expr->size += list->size;
 	advance(info);
-	while (!match(info, NTWT_SEMICOLON)) {
-		if (unlikely(match(info, NTWT_EOI))) {
+	while (info->token != NTWT_SEMICOLON) {
+		if (unlikely(info->token == NTWT_EOI)) {
 			fprintf(stderr,
 				"Error: end of input on line: %u\n",
 				info->lineno);

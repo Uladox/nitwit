@@ -44,11 +44,8 @@ client.o = \
 	shared/unicode/unihelpers.h
 
 interpreter.o = \
-	shared/interpreter/states.c \
 	shared/interpreter/subfuncts/saving.c \
-	shared/interpreter/subfuncts/threaded.c \
-	shared/interpreter/macros/define.h \
-	shared/interpreter/macros/undef.h
+	shared/interpreter/subfuncts/threaded.c
 
 op_map = \
 	gen/programs/bin/map_gen \

@@ -4,14 +4,16 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "../interpreter/interpreter.h"
+
 struct ntwt_asm_program {
 	unsigned int size;
 	struct ntwt_asm_expr *expr;
 };
 
 struct ntwt_asm_expr {
+	enum ntwt_token type;
 	unsigned int lineno;
-	unsigned int type;
 	unsigned int size;
 	struct ntwt_asm_expr *next;
 	union {

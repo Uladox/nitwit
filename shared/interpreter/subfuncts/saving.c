@@ -82,36 +82,10 @@ static void save(struct ntwt_instance *state)
 {
 	remove("state.ilk");
 	FILE *image = fopen("state.ilk", "ab");
-	char c_op[1];
+	static const char c_op = NTWT_OP_END;
 
-	c_op[0] = NTWT_OP_TEST;
-	fwrite(c_op, 1, 1, image);
 	save_packages(state, image);
 	save_practises(state, image);
-
-	/* c_op[0] = NTWT_OP_TEST; */
-	/* fwrite(c_op, 1, 1, image); */
-	c_op[0] = NTWT_OP_CONTEXT;
-	fwrite(&c_op[0], 1, 1, image);
-	c_op[0] = 0;
-	fwrite(c_op, 1, 1, image);
-	/* c_op[0] = NTWT_OP_ACTION; */
-	/* fwrite(&c_op[0], 1, 1, image); */
-	/* c_op[0] = NTWT_OP_STRENGTH; */
-	/* fwrite(c_op, sizeof(char), 1, image); */
-	/* d_op[0] = state->context->strength; */
-	/* fwrite(d_op, sizeof(double), 1, image); */
-	/* c_op[0] = NTWT_OP_CAN_HAPPEN; */
-	/* fwrite(c_op, sizeof(char), 1, image); */
-	/* d_op[0] = state->context->can_happen; */
-	/* fwrite(d_op, sizeof(double), 1, image); */
-	/* c_op[0] = NTWT_OP_UNSATISFIED; */
-	/* fwrite(c_op, sizeof(char), 1, image); */
-	/* d_op[0] = state->context->unsatisfied; */
-	/* fwrite(d_op, sizeof(double), 1, image); */
-	c_op[0] = NTWT_OP_RUN;
-	fwrite(c_op, 1, 1, image);
-	c_op[0] = NTWT_OP_END;
-	fwrite(c_op, 1, 1, image);
+	fwrite(&c_op, sizeof(c_op), 1, image);
 	fclose(image);
 }
