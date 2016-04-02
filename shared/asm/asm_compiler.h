@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "../interpreter/interpreter.h"
+#include "../vm/vm.h"
 
 struct ntwt_asm_program {
 	unsigned int size;

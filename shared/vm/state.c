@@ -1,3 +1,42 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <dlfcn.h>
+#include <unistr.h>
+
+#include "state.h"
+#include "vm.h"
+
+void ntwt_vm_state_load_package(struct ntwt_vm_state *state,
+				uint32_t package_num,
+				uint32_t action_max,
+				uint8_t *location)
+{
+	struct ntwt_package *package;
+
+	if (package_num >= state->package_max) {
+		fprintf(stderr,
+			"Error loading package \"%s\": above max number of packages for state",
+			location);
+		exit(1);
+	}
+	package = state->packages + package_num;
+	package->handle = dlopen((char *) location, RTLD_LAZY);
+	if (!package->handle) {
+		fprintf(stderr,
+			"Error loading package from \"%s\": ",
+			location);
+		fputs(dlerror(), stderr);
+		exit(1);
+	}
+	package->package_num = package_num;
+	package->location = location;
+	package->actions = calloc(action_max, sizeof(*package->actions));
+	package->action_max = action_max;
+	package->action_ptr = 0;
+	if (package_num >= state->package_ptr)
+		state->package_ptr = package_num + 1;
+	package->loaded = 1;
+}
 
 static void save_packages_actions(struct ntwt_package *pack, FILE *image)
 {
@@ -22,7 +61,7 @@ static void save_packages_actions(struct ntwt_package *pack, FILE *image)
 
 }
 
-static void save_packages(struct ntwt_instance *state, FILE *image)
+static void save_packages(struct ntwt_vm_state *state, FILE *image)
 {
 	struct ntwt_package *pack;
 	static const char init_pack_op[1] = { NTWT_OP_INIT_PACK };
@@ -49,7 +88,7 @@ static void save_packages(struct ntwt_instance *state, FILE *image)
 	}
 }
 
-static void save_practises(struct ntwt_instance *state, FILE *image)
+static void save_practises(struct ntwt_vm_state *state, FILE *image)
 {
 	/* Writes practises and gives them actions */
 	struct ntwt_practise *prac;
@@ -78,7 +117,7 @@ static void save_practises(struct ntwt_instance *state, FILE *image)
 	}
 }
 
-static void save(struct ntwt_instance *state)
+void ntwt_vm_save(struct ntwt_vm_state *state)
 {
 	remove("state.ilk");
 	FILE *image = fopen("state.ilk", "ab");

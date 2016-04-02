@@ -4,7 +4,8 @@ SRC_FILES = \
 	client/client_io.c \
 	shared/socket/socket.c \
 	shared/practise/practise.c \
-	shared/interpreter/interpreter.c \
+	shared/vm/vm.c \
+	shared/vm/state.c \
 	shared/asm/asm_compiler.c \
 	shared/unicode/unihelpers.c \
 	shared/hashmap/hashmap.c \
@@ -20,7 +21,8 @@ RELEASE_FILES = $(patsubst %,$(RELEASE_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
 SERVER_FILES = \
 	server.o \
 	socket.o \
-	interpreter.o \
+	vm.o \
+	state.o \
 	practise.o
 
 CLIENT_FILES = \
@@ -34,18 +36,14 @@ CLIENT_FILES = \
 
 server.o = \
 	shared/socket/socket.h \
-	shared/interpreter/interpreter.h
+	shared/vm/vm.h
 
 client.o = \
 	client/client_io.h \
 	shared/socket/socket.h \
-	shared/interpreter/interpreter.h \
+	shared/vm/vm.h \
 	shared/asm/asm_compiler.h \
 	shared/unicode/unihelpers.h
-
-interpreter.o = \
-	shared/interpreter/subfuncts/saving.c \
-	shared/interpreter/subfuncts/threaded.c
 
 op_map = \
 	gen/programs/bin/map_gen \
@@ -57,7 +55,7 @@ map_gen = \
 	gen/programs/map_gen.c \
 	shared/hashmap/hashmap.h \
 	shared/hashmap/hashmap.c \
-	shared/interpreter/interpreter.h
+	shared/vm/vm.h
 
 ifndef ASSUME_UTF8
 ASSUME_UTF8 = 1

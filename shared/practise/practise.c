@@ -6,7 +6,7 @@
 
 #include "practise.h"
 #include "../nitwit_macros.h"
-#include "../interpreter/interpreter.h"
+#include "../vm/vm.h"
 
 static void test_fnct(double *can_happen,
 		      double *strength,
@@ -69,38 +69,6 @@ struct ntwt_action *ntwt_action_new(uint8_t *name,
 	action->funct = funct;
 
 	return action;
-}
-
-void ntwt_instance_load_package(struct ntwt_instance *instance,
-				uint32_t package_num,
-				uint32_t action_max,
-				uint8_t *location)
-{
-	struct ntwt_package *package;
-
-	if (package_num >= instance->package_max) {
-		fprintf(stderr,
-			"Error loading package \"%s\": above max number of packages for instance",
-			location);
-		exit(1);
-	}
-	package = instance->packages + package_num;
-	package->handle = dlopen((char *) location, RTLD_LAZY);
-	if (!package->handle) {
-		fprintf(stderr,
-			"Error loading package from \"%s\": ",
-			location);
-		fputs(dlerror(), stderr);
-		exit(1);
-	}
-	package->package_num = package_num;
-	package->location = location;
-	package->actions = calloc(action_max, sizeof(*package->actions));
-	package->action_max = action_max;
-	package->action_ptr = 0;
-	if (package_num >= instance->package_ptr)
-		instance->package_ptr = package_num + 1;
-	package->loaded = 1;
 }
 
 void ntwt_package_load_action(struct ntwt_package *package,

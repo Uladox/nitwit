@@ -5,7 +5,7 @@
 #include <locale.h>
 
 #include "../shared/socket/socket.h"
-#include "../shared/interpreter/interpreter.h"
+#include "../shared/vm/vm.h"
 
 void yell(double *can_happen,
 	  double *strength,
@@ -29,7 +29,7 @@ void *echo_socket(void *input)
 	char *str;
 
 	/* struct ntwt_practise p[100]; */
-	struct ntwt_instance state;
+	struct ntwt_vm_state state;
 
 	state.package_max = 1;
 	state.practises = calloc(100, sizeof(*state.practises));
@@ -58,7 +58,7 @@ void *echo_socket(void *input)
 
 int main(int argc, char *args[])
 {
-	struct ntwt_instance state;
+	struct ntwt_vm_state state;
 
 	struct ntwt_connecter *find_socket;
 	struct ntwt_connection *connect_socket;

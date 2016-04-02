@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <pthread.h>
 
-struct ntwt_instance;
-
 struct ntwt_action {
 	char loaded;
 	uint32_t package_num;
@@ -53,11 +51,6 @@ void ntwt_practise_load(struct ntwt_practise *p,
 			double can_happen,
 			double strength,
 			double unsatisfied);
-
-void ntwt_instance_load_package(struct ntwt_instance *instance,
-				uint32_t package_num,
-				uint32_t action_max,
-				uint8_t *location);
 
 void ntwt_package_load_action(struct ntwt_package *package,
 			      uint32_t id,

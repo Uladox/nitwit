@@ -1,17 +1,12 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistr.h>
 #include <uniconv.h>
 
-#include "interpreter.h"
+#include "vm.h"
 
 #include "../unicode/unihelpers.h"
-
-/* Included functions stored in other files for keeping this file clean */
-#include "subfuncts/saving.c"
-#include "subfuncts/threaded.c"
 
 #define STATE(x)      s_##x :
 #define GOTOSTATE(x)  goto s_##x
@@ -84,7 +79,28 @@ const unsigned int *restrict const ntwt_op_args[] = {
 						    NTWT_STRING }
 };
 
-void ntwt_interprete(struct ntwt_instance *restrict state,
+
+
+static void *threaded_practise_run(void *p)
+{
+	ntwt_practise_run(p);
+	return NULL;
+}
+
+static void *threaded_awareness_run(void *a)
+{
+	while (1) {
+		printf("AWARE!\n");
+		usleep(4000 * 100);
+	}
+	return NULL;
+}
+
+
+
+
+
+void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		     const char *restrict exec_ptr)
 {
 	static const void *restrict const dtable[] = {
@@ -233,7 +249,7 @@ void ntwt_interprete(struct ntwt_instance *restrict state,
 	}
 
 	STATE (save) {
-		save(state);
+		ntwt_vm_save(state);
 		NEXTSTATE(exec_ptr);
 	}
 
@@ -259,7 +275,7 @@ void ntwt_interprete(struct ntwt_instance *restrict state,
 		POPSET(pkg_num, exec_ptr);
 		POPSET(action_max, exec_ptr);
 		POPSETSTRING(path, path_size, exec_ptr);
-		ntwt_instance_load_package(state, pkg_num, action_max, path);
+		ntwt_vm_state_load_package(state, pkg_num, action_max, path);
 		POINTEDSTATE(exec_ptr);
 	}
 

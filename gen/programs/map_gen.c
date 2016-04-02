@@ -4,7 +4,7 @@
 
 #define NTWT_SHORT_NAMES
 #include "../../shared/hashmap/hashmap.h"
-#include "../../shared/interpreter/interpreter.h"
+#include "../../shared/vm/vm.h"
 
 #define MAP_ADD_OP(MAP, KEY, STORAGE)					\
 	hashmap_add(MAP, KEY, sizeof(KEY) - 1, &(char){ STORAGE })	\
