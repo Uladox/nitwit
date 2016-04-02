@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistr.h>
 
-#include "op_map.h"
 
 static int compare(const void *entry_key, uint32_t entry_key_size,
 		   const void *key, uint32_t key_size)

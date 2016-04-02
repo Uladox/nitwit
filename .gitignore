@@ -36,3 +36,4 @@
 /bin/release/nitwit_client
 gen/output/op_map.c
 gen/programs/bin/map_gen
+/bin/debug/state.ilk

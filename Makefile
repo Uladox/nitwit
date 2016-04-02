@@ -1,5 +1,6 @@
 SRC_FILES = \
 	server/server.c \
+	server/server_args.c \
 	client/client.c \
 	client/client_io.c \
 	shared/socket/socket.c \
@@ -20,6 +21,7 @@ RELEASE_FILES = $(patsubst %,$(RELEASE_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
 
 SERVER_FILES = \
 	server.o \
+	server_args.o \
 	socket.o \
 	vm.o \
 	state.o \
@@ -48,8 +50,8 @@ client.o = \
 op_map = \
 	gen/programs/bin/map_gen \
 	gen/output/op_map.h \
-	gen/output/op_map_opener.c \
-	gen/output/op_map_closer.c \
+	gen/input/op_map_opener.c \
+	gen/input/op_map_closer.c \
 
 map_gen = \
 	gen/programs/map_gen.c \
