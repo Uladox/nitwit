@@ -20,6 +20,6 @@ void ntwt_vm_state_load_package(struct ntwt_vm_state *state,
 				uint32_t action_max,
 				uint8_t *location);
 
-void ntwt_vm_save(struct ntwt_vm_state *state);
+void ntwt_vm_save(struct ntwt_vm_state *state, const char *img_name);
 
 #endif

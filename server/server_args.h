@@ -4,6 +4,7 @@
 struct ntwt_svr_opts
 {
 	int load_image;
+	int diff_output;
 	char *image;
 	char *output;
 };

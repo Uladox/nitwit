@@ -117,10 +117,10 @@ static void save_practises(struct ntwt_vm_state *state, FILE *image)
 	}
 }
 
-void ntwt_vm_save(struct ntwt_vm_state *state)
+void ntwt_vm_save(struct ntwt_vm_state *state, const char *out_name)
 {
-	remove("state.ilk");
-	FILE *image = fopen("state.ilk", "ab");
+	remove(out_name);
+	FILE *image = fopen(out_name, "ab");
 	static const char c_op = NTWT_OP_END;
 
 	save_packages(state, image);

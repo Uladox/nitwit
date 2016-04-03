@@ -101,7 +101,8 @@ static void *threaded_awareness_run(void *a)
 
 
 void ntwt_interprete(struct ntwt_vm_state *restrict state,
-		     const char *restrict exec_ptr)
+		     const char *restrict exec_ptr,
+		     const char *out_name)
 {
 	static const void *restrict const dtable[] = {
 		[NTWT_OP_READ]        = &&s_read,
@@ -249,7 +250,7 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 	}
 
 	STATE (save) {
-		ntwt_vm_save(state);
+		ntwt_vm_save(state, out_name);
 		NEXTSTATE(exec_ptr);
 	}
 

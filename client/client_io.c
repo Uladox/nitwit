@@ -10,8 +10,12 @@ void compile_and_send(const char *charset, struct ntwt_connection *sock,
 		      char **io_buff, size_t *io_size,
 		      uint32_t *msg_len)
 {
+	int error = 0;
+
 	asm_recycle(stack, program->expr);
-        asm_statements(program, stack, (uint8_t *) *io_buff);
+        asm_statements(program, stack, (uint8_t *) *io_buff, &error);
+	if (error)
+		return;
 	asm_program_bytecode(program, io_buff, io_size, msg_len);
 	connection_send(sock, msg_len, sizeof(*msg_len));
 	connection_send(sock, *io_buff, *msg_len);
@@ -38,10 +42,14 @@ void compile_and_send(const char *charset, struct ntwt_connection *sock,
 		      char **io_buff, size_t *io_size,
 		      uint32_t *msg_len)
 {
+	int error = 0;
+
 	get_u8(charset, *io_buff, *msg_len, &uni_buff, &uni_size);
 
 	asm_recycle(stack, program->expr);
-	asm_statements(program, stack, uni_buff);
+	asm_statements(program, stack, uni_buff, &error);
+	if (error)
+		return;
 	asm_program_bytecode(program, io_buff, io_size, msg_len);
 	connection_send(sock, msg_len, sizeof(*msg_len));
 	connection_send(sock, *io_buff, *msg_len);

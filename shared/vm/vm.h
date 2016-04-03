@@ -28,6 +28,6 @@ enum ntwt_token { NTWT_EOI, NTWT_SEMICOLON, NTWT_COMMAND, NTWT_OP_CODE,
 extern const unsigned int *restrict const ntwt_op_args[];
 
 void ntwt_interprete(struct ntwt_vm_state *restrict state,
-		     const char *restrict exec_ptr);
-
+		     const char *restrict exec_ptr,
+		     const char *out_name);
 #endif
