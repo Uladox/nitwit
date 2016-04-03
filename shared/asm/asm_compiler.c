@@ -9,6 +9,20 @@
 #include "../nitwit_macros.h"
 #include "../../gen/output/op_map.h"
 
+#define CLEANUP_ERROR()				\
+	if (*error)				\
+		goto cleanup;
+#define RAISE_ERROR()				\
+	do {					\
+		*error = 1;			\
+		return;				\
+	} while (0)
+#define RAISE_AND_CLEANUP_ERROR()		\
+	do {					\
+		*error = 1;			\
+		goto cleanup;			\
+	} while (0)
+
 struct lex_info {
 	const uint8_t *lexme;
 	enum ntwt_token token;
@@ -30,8 +44,7 @@ static void lex_string(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: string has no ending quote on line %u\n",
 				info->lineno);
-			*error = 1;
-			return;
+			RAISE_ERROR();
 		case '\\':
 			backslashed = !backslashed;
 			break;
@@ -82,20 +95,17 @@ static void lex_num(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: to many '.' in number on line %u\n",
 				info->lineno);
-			*error = 1;
-			return;
+			RAISE_ERROR();
 		case '\0':
 			fprintf(stderr,
 				"Error: unexpected end of input on line %u\n",
 				info->lineno);
-			*error = 1;
-			return;
+			RAISE_ERROR();
 		default:
 			fprintf(stderr,
 				"Error: invalid char '%c' in number on line %u\n",
 				*current, info->lineno);
-			*error = 1;
-			return;
+			RAISE_ERROR();
 		}
 	}
 }
@@ -108,8 +118,7 @@ static void lex_op_code(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: unexpected end of input on line %u\n",
 				info->lineno);
-			*error = 1;
-			return;
+			RAISE_ERROR();
 		}
 		++current;
 		--info->units;
@@ -166,8 +175,7 @@ static void lex(struct lex_info *info, int *error)
 			fprintf(stderr,
 				"Error: invalid argument on line %u, if you want an op_code, put '*' before it.\n",
 				info->lineno);
-			*error = 1;
-			return;
+			RAISE_ERROR();
 		}
 		lex_op_code(info, current, error);
 		break;
@@ -210,15 +218,13 @@ static struct ntwt_asm_expr *term(struct lex_info *info,
 	case NTWT_OP_CODE:
 		expr->size = sizeof(char);
 
-	        fwrite(info->lexme, 1, info->lexlen, stdout);
 		char *result = ntwt_hashmap_get(&ntwt_op_map, info->lexme,
 						info->lexlen);
 		if (!result) {
 			fprintf(stderr,
 				"Error: unrecognized op code on line %u\n",
 				info->lineno);
-			*error = 1;
-			goto cleanup;
+			RAISE_AND_CLEANUP_ERROR();
 		}
 
 		expr->contents.op_code = *result;
@@ -227,27 +233,23 @@ static struct ntwt_asm_expr *term(struct lex_info *info,
 		fprintf(stderr,
 			"Error: extra semicolon  on line %u\n",
 			info->lineno);
-		*error = 1;
-		goto cleanup;
+		RAISE_AND_CLEANUP_ERROR();
 	case NTWT_EOI:
 		fprintf(stderr,
 			"Error: unexpected end of input on line %u\n",
 			info->lineno);
-		*error = 1;
-		goto cleanup;
+		RAISE_AND_CLEANUP_ERROR();
 	default:
 		/* Should never happen because lex should only return above */
 		fprintf(stderr,
 			"Error: unrecognized token on line %u\n",
 			info->lineno);
-		*error = 1;
-		goto cleanup;
+		RAISE_AND_CLEANUP_ERROR();
 	}
 
 	return expr;
 cleanup:
-	asm_expr_free(expr);
-	/* asm_recycle(stack, expr); */
+	asm_recycle(stack, expr);
 	return NULL;
 }
 
@@ -263,33 +265,27 @@ static struct ntwt_asm_expr *command(struct lex_info *info,
 	expr->size = 0;
 
 	list = (expr->contents.list = term(info, stack, error));
-	if (*error)
-		goto cleanup;
+	CLEANUP_ERROR();
 	expr->size += list->size;
 	lex(info, error);
-	if (*error)
-		goto cleanup;
+	CLEANUP_ERROR();
 	while (info->token != NTWT_SEMICOLON) {
 		if (unlikely(info->token == NTWT_EOI)) {
 			fprintf(stderr,
 				"Error: end of input on line: %u\n",
 				info->lineno);
-		        *error = 1;
-			goto cleanup;
+		        RAISE_AND_CLEANUP_ERROR();
 		}
 		list = (list->next = term(info, stack, error));
-		if (*error)
-			goto cleanup;
+		CLEANUP_ERROR();
 		expr->size += list->size;
 		lex(info, error);
-		if (*error)
-			goto cleanup;
+		CLEANUP_ERROR();
 	}
 
 	return expr;
 cleanup:
-	asm_expr_free(expr);
-	/* asm_recycle(stack, expr); */
+	asm_recycle(stack, expr);
 	return NULL;
 }
 
@@ -312,41 +308,34 @@ void asm_statements(struct ntwt_asm_program *program,
 	if (*error)
 		return;
 	expr = (program->expr = command(&info, stack, error));
-	if (*error)
-		goto cleanup;
+	CLEANUP_ERROR();
 	if (unlikely(info.token != NTWT_SEMICOLON)) {
 		fprintf(stderr,
 			"Error: Inserting missing semicolon on line %u\n",
 			info.lineno);
-		*error = 1;
-		return;
+		RAISE_AND_CLEANUP_ERROR();
 	}
 
 	program->size += expr->size;
 	lex(&info, error);
-	if (*error)
-		goto cleanup;
+	CLEANUP_ERROR();
 	while (info.token != NTWT_EOI) {
 		expr = (expr->next = command(&info, stack, error));
-		if (*error)
-			goto cleanup;
+		CLEANUP_ERROR();
 		if (unlikely(info.token != NTWT_SEMICOLON)) {
 			fprintf(stderr,
 				"Error: Insert missing semicolon on line %u\n",
 				info.lineno);
-		        goto cleanup;
+		        RAISE_AND_CLEANUP_ERROR();
 		}
 		program->size += expr->size;
 		lex(&info, error);
-		if (*error)
-			goto cleanup;
+		CLEANUP_ERROR();
 	}
 	return;
 cleanup:
-	asm_expr_free(program->expr);
+	asm_recycle(stack, program->expr);
 	program->expr = NULL;
-	/* program->expr = NULL; */
-	/* asm_recycle(stack, program->expr); */
 	return;
 }
 
@@ -405,7 +394,6 @@ void asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *top)
 	struct ntwt_asm_expr *expr = top;
 
 	while (expr) {
-		printf("1\n");
 		struct ntwt_asm_expr *tmp;
 
 		if (expr->type == NTWT_STRING)
@@ -422,7 +410,6 @@ void asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *top)
 void asm_expr_free(struct ntwt_asm_expr *expr)
 {
 	while (expr) {
-		printf("2");
 		struct ntwt_asm_expr *tmp;
 
 		if (expr->type == NTWT_STRING)
@@ -431,6 +418,17 @@ void asm_expr_free(struct ntwt_asm_expr *expr)
 			asm_expr_free(expr->contents.list);
 		tmp = expr;
 		expr = expr->next;
+		free(tmp);
+	}
+}
+
+void asm_stack_free(struct ntwt_asm_expr *stack)
+{
+	while (stack) {
+		struct ntwt_asm_expr *tmp;
+
+		tmp = stack;
+		stack = stack->next;
 		free(tmp);
 	}
 }

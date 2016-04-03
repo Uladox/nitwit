@@ -38,6 +38,8 @@ void ntwt_asm_recycle(struct ntwt_asm_expr **stack,
 
 void ntwt_asm_expr_free(struct ntwt_asm_expr *expr);
 
+void asm_stack_free(struct ntwt_asm_expr *stack);
+
 #if defined NTWT_SHORT_NAMES || defined NTWT_ASM_COMPILER_SHORT_NAMES
 #define asm_statements(...) ntwt_asm_statements(__VA_ARGS__)
 #define asm_program_bytecode(...) ntwt_asm_program_bytecode(__VA_ARGS__)

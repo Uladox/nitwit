@@ -57,8 +57,8 @@ int main(void)
 	free(io_buff);
 	free_conversions();
 	connection_free(sock);
-	if (program.expr)
-		asm_expr_free(program.expr);
+	asm_expr_free(program.expr);
+	asm_stack_free(stack);
 	return 0;
 }
 
