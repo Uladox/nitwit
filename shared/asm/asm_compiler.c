@@ -2,26 +2,13 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <setjmp.h>
 #include <unistr.h>
 
 #define NTWT_SHORT_NAMES
 #include "asm_compiler.h"
 #include "../nitwit_macros.h"
 #include "../../gen/output/op_map.h"
-
-#define CLEANUP_ERROR()				\
-	if (*error)				\
-		goto cleanup;
-#define RAISE_ERROR()				\
-	do {					\
-		*error = 1;			\
-		return;				\
-	} while (0)
-#define RAISE_AND_CLEANUP_ERROR()		\
-	do {					\
-		*error = 1;			\
-		goto cleanup;			\
-	} while (0)
 
 struct lex_info {
 	const uint8_t *lexme;
@@ -30,6 +17,7 @@ struct lex_info {
 	size_t units;
 	unsigned int lineno;
 	unsigned int offset;
+	jmp_buf err_jmp;
 };
 
 static void lex_string(struct lex_info *info, const uint8_t *current,
@@ -44,7 +32,7 @@ static void lex_string(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: string has no ending quote on line %u\n",
 				info->lineno);
-			RAISE_ERROR();
+			longjmp(info->err_jmp, 1);
 		case '\\':
 			backslashed = !backslashed;
 			break;
@@ -95,17 +83,17 @@ static void lex_num(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: to many '.' in number on line %u\n",
 				info->lineno);
-			RAISE_ERROR();
+			longjmp(info->err_jmp, 1);
 		case '\0':
 			fprintf(stderr,
 				"Error: unexpected end of input on line %u\n",
 				info->lineno);
-			RAISE_ERROR();
+			longjmp(info->err_jmp, 1);
 		default:
 			fprintf(stderr,
 				"Error: invalid char '%c' in number on line %u\n",
 				*current, info->lineno);
-			RAISE_ERROR();
+			longjmp(info->err_jmp, 1);
 		}
 	}
 }
@@ -118,12 +106,11 @@ static void lex_op_code(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: unexpected end of input on line %u\n",
 				info->lineno);
-			RAISE_ERROR();
+			longjmp(info->err_jmp, 1);
 		}
 		++current;
 		--info->units;
 	}
-
 	info->lexlen = current - info->lexme;
 	info->token = NTWT_OP_CODE;
 }
@@ -175,7 +162,7 @@ static void lex(struct lex_info *info, int *error)
 			fprintf(stderr,
 				"Error: invalid argument on line %u, if you want an op_code, put '*' before it.\n",
 				info->lineno);
-			RAISE_ERROR();
+			longjmp(info->err_jmp, 1);
 		}
 		lex_op_code(info, current, error);
 		break;
@@ -192,11 +179,12 @@ static struct ntwt_asm_expr *pop(struct ntwt_asm_expr **stack)
 	return malloc(sizeof(**stack));
 }
 
-static struct ntwt_asm_expr *term(struct lex_info *info,
-				  struct ntwt_asm_expr **stack,
-				  int *error)
+static void term(struct lex_info *info,
+		 struct ntwt_asm_expr **load_expr,
+		 struct ntwt_asm_expr **stack,
+		 int *error)
 {
-	struct ntwt_asm_expr *expr = pop(stack);
+	struct ntwt_asm_expr *expr = (*load_expr = pop(stack));
 
 	expr->next = NULL;
 	switch (expr->type = info->token) {
@@ -224,69 +212,52 @@ static struct ntwt_asm_expr *term(struct lex_info *info,
 			fprintf(stderr,
 				"Error: unrecognized op code on line %u\n",
 				info->lineno);
-			RAISE_AND_CLEANUP_ERROR();
+			longjmp(info->err_jmp, 1);
 		}
-
 		expr->contents.op_code = *result;
 		break;
 	case NTWT_SEMICOLON:
 		fprintf(stderr,
 			"Error: extra semicolon  on line %u\n",
 			info->lineno);
-		RAISE_AND_CLEANUP_ERROR();
+		longjmp(info->err_jmp, 1);
 	case NTWT_EOI:
 		fprintf(stderr,
 			"Error: unexpected end of input on line %u\n",
 			info->lineno);
-		RAISE_AND_CLEANUP_ERROR();
+		longjmp(info->err_jmp, 1);
 	default:
 		/* Should never happen because lex should only return above */
 		fprintf(stderr,
 			"Error: unrecognized token on line %u\n",
 			info->lineno);
-		RAISE_AND_CLEANUP_ERROR();
+		longjmp(info->err_jmp, 1);
 	}
-
-	return expr;
-cleanup:
-	asm_recycle(stack, expr);
-	return NULL;
 }
 
-static struct ntwt_asm_expr *command(struct lex_info *info,
-				     struct ntwt_asm_expr **stack,
-				     int *error)
+static void command(struct lex_info *info,
+		    struct ntwt_asm_expr **load_expr,
+		    struct ntwt_asm_expr **stack,
+		    int *error)
 {
-	struct ntwt_asm_expr *expr = pop(stack);
+	struct ntwt_asm_expr *expr = (*load_expr = pop(stack));
 	struct ntwt_asm_expr *list;
 
 	expr->type = NTWT_COMMAND;
 	expr->next = NULL;
 	expr->size = 0;
 
-	list = (expr->contents.list = term(info, stack, error));
-	CLEANUP_ERROR();
+	term(info, &expr->contents.list, stack, error);
+	list = expr->contents.list;
 	expr->size += list->size;
 	lex(info, error);
-	CLEANUP_ERROR();
+
 	while (info->token != NTWT_SEMICOLON) {
-		if (unlikely(info->token == NTWT_EOI)) {
-			fprintf(stderr,
-				"Error: end of input on line: %u\n",
-				info->lineno);
-		        RAISE_AND_CLEANUP_ERROR();
-		}
-		list = (list->next = term(info, stack, error));
-		CLEANUP_ERROR();
+	        term(info, &list->next, stack, error);
+		list = list->next;
 		expr->size += list->size;
 		lex(info, error);
-		CLEANUP_ERROR();
 	}
-
-	return expr;
-cleanup:
-	asm_recycle(stack, expr);
-	return NULL;
 }
 
 void asm_statements(struct ntwt_asm_program *program,
@@ -302,41 +273,27 @@ void asm_statements(struct ntwt_asm_program *program,
 		.token = NTWT_SEMICOLON
 	};
 
-	program->size = 0;
-
-	lex(&info, error);
-	if (*error)
+	*error = setjmp(info.err_jmp);
+	if (*error) {
+		asm_recycle(stack, program->expr);
+		program->expr = NULL;
 		return;
-	expr = (program->expr = command(&info, stack, error));
-	CLEANUP_ERROR();
-	if (unlikely(info.token != NTWT_SEMICOLON)) {
-		fprintf(stderr,
-			"Error: Inserting missing semicolon on line %u\n",
-			info.lineno);
-		RAISE_AND_CLEANUP_ERROR();
 	}
 
+	program->size = 0;
+	lex(&info, error);
+
+	command(&info, &program->expr, stack, error);
+	expr = program->expr;
 	program->size += expr->size;
 	lex(&info, error);
-	CLEANUP_ERROR();
+
 	while (info.token != NTWT_EOI) {
-		expr = (expr->next = command(&info, stack, error));
-		CLEANUP_ERROR();
-		if (unlikely(info.token != NTWT_SEMICOLON)) {
-			fprintf(stderr,
-				"Error: Insert missing semicolon on line %u\n",
-				info.lineno);
-		        RAISE_AND_CLEANUP_ERROR();
-		}
+		command(&info, &expr->next, stack, error);
+		expr = expr->next;
 		program->size += expr->size;
 		lex(&info, error);
-		CLEANUP_ERROR();
 	}
-	return;
-cleanup:
-	asm_recycle(stack, program->expr);
-	program->expr = NULL;
-	return;
 }
 
 static void asm_term_bytecode(struct ntwt_asm_expr *term, char **code_ptr)
@@ -389,10 +346,8 @@ void asm_program_bytecode(struct ntwt_asm_program *program,
 	        asm_command_bytecode(command, &code_ptr);
 }
 
-void asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *top)
+void asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *expr)
 {
-	struct ntwt_asm_expr *expr = top;
-
 	while (expr) {
 		struct ntwt_asm_expr *tmp;
 
