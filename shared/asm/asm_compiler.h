@@ -29,9 +29,9 @@ void ntwt_asm_statements(struct ntwt_asm_program *program,
 			 struct ntwt_asm_expr **stack,
 			 const uint8_t *code, int *error);
 
-void ntwt_asm_program_bytecode(struct ntwt_asm_program *program,
-			       char **code, size_t *old_size,
-			       unsigned int *message_size);
+void asm_program_bytecode(struct ntwt_asm_program *program,
+			  char **code, size_t *old_size,
+			  unsigned int *message_size, int *error);
 
 void ntwt_asm_recycle(struct ntwt_asm_expr **stack,
 		      struct ntwt_asm_expr *top);

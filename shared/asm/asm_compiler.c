@@ -7,6 +7,7 @@
 
 #define NTWT_SHORT_NAMES
 #include "asm_compiler.h"
+#include "../vm/vm_data.h"
 #include "../nitwit_macros.h"
 #include "../../gen/output/op_map.h"
 
@@ -15,6 +16,7 @@ struct lex_info {
 	enum ntwt_token token;
 	size_t lexlen;
 	size_t units;
+	unsigned int lexme_lineno;
 	unsigned int lineno;
 	unsigned int offset;
 	jmp_buf err_jmp;
@@ -132,6 +134,7 @@ static void lex(struct lex_info *info, int *error)
 	info->lexlen = 1;
 	info->offset = 0;
 	info->lexme = current;
+	info->lexme_lineno = info->lineno;
 
 	u8_mbtouc_unsafe(&puc, current, info->units);
 	switch (puc) {
@@ -186,6 +189,7 @@ static void term(struct lex_info *info,
 {
 	struct ntwt_asm_expr *expr = (*load_expr = pop(stack));
 
+	expr->lineno = info->lexme_lineno;
 	expr->next = NULL;
 	switch (expr->type = info->token) {
 	case NTWT_UINT:
@@ -296,7 +300,8 @@ void asm_statements(struct ntwt_asm_program *program,
 	}
 }
 
-static void asm_term_bytecode(struct ntwt_asm_expr *term, char **code_ptr)
+static void asm_term_bytecode(struct ntwt_asm_expr *term, char **code_ptr,
+			      jmp_buf err_jmp)
 {
 	switch (term->type) {
 	case NTWT_UINT:
@@ -315,21 +320,53 @@ static void asm_term_bytecode(struct ntwt_asm_expr *term, char **code_ptr)
 		fprintf(stderr,
 			"Error: Unrecognized type in asm tree to bytecode, %u.\n",
 			term->type);
+		longjmp(err_jmp, 1);
 	}
 	*code_ptr += term->size;
 }
 
-static void asm_command_bytecode(struct ntwt_asm_expr *command, char **code_ptr)
+static void asm_command_bytecode(struct ntwt_asm_expr *command, char **code_ptr,
+				 jmp_buf err_jmp)
 {
 	struct ntwt_asm_expr *term = command->contents.list;
+	const unsigned int command_line = term->lineno;
+	const char *command_name =
+		ntwt_op_name[(uint8_t) term->contents.op_code];
+	const int *params = ntwt_op_args[(uint8_t) term->contents.op_code];
 
-	for (; term; term = term->next)
-	        asm_term_bytecode(term, code_ptr);
+	asm_term_bytecode(term, code_ptr, err_jmp);
+	term = term->next;
+
+	int i = 1;
+	for (; term; term = term->next, ++i) {
+		if (i - 1 > params[0]) {
+			fprintf(stderr,
+				"Error: too many arguments to %s on line %u, "
+				"expected %u, got %i\n", command_name,
+				command_line, params[0], i);
+			longjmp(err_jmp, 1);
+		}
+		if (params[i] != term->type) {
+			fprintf(stderr,
+				"Error: on line %u expected type %s, got %s\n",
+				term->lineno, ntwt_type_name[params[i]],
+				ntwt_type_name[term->type]);
+			longjmp(err_jmp, 1);
+		}
+	        asm_term_bytecode(term, code_ptr, err_jmp);
+	}
+	if (i - 1 < params[0]) {
+		fprintf(stderr,
+			"Error: too few arguments to %s on line %u, "
+			"expected %u, got %u\n", command_name, command_line,
+			params[0], i - 1);
+		longjmp(err_jmp, 1);
+	}
 }
 
 void asm_program_bytecode(struct ntwt_asm_program *program,
 			  char **code, size_t *old_size,
-			  unsigned int *message_size)
+			  unsigned int *message_size, int *error)
 {
 	*message_size = program->size;
 	if (unlikely(program->size > *old_size)) {
@@ -338,12 +375,17 @@ void asm_program_bytecode(struct ntwt_asm_program *program,
 		*old_size = program->size;
 	}
 
+	jmp_buf err_jmp;
 	char *code_ptr = *code;
 	struct ntwt_asm_expr *command;
 
+	*error = setjmp(err_jmp);
+	if (*error)
+		return;
+
 	for (command = program->expr;
 	     command; command = command->next)
-	        asm_command_bytecode(command, &code_ptr);
+	        asm_command_bytecode(command, &code_ptr, err_jmp);
 }
 
 void asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *expr)

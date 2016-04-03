@@ -7,6 +7,7 @@ SRC_FILES = \
 	shared/practise/practise.c \
 	shared/vm/vm.c \
 	shared/vm/state.c \
+	shared/vm/vm_data.c \
 	shared/asm/asm_compiler.c \
 	shared/unicode/unihelpers.c \
 	shared/hashmap/hashmap.c \
@@ -32,6 +33,7 @@ CLIENT_FILES = \
 	client_io.o \
 	socket.o \
 	asm_compiler.o \
+	vm_data.o \
 	unihelpers.o \
 	hashmap.o \
 	op_map.o
