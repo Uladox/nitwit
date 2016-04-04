@@ -34,6 +34,7 @@ static void lex_string(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: string has no ending quote on line %u\n",
 				info->lineno);
+			info->token = NTWT_EOI;
 			longjmp(info->err_jmp, 1);
 		case '\\':
 			backslashed = !backslashed;
@@ -81,7 +82,7 @@ static void lex_num(struct lex_info *info, const uint8_t *current,
 		case '.':
 			num_type = NTWT_DOUBLE;
 			if (likely(!period))
-				break;
+				continue;
 			fprintf(stderr,
 				"Error: to many '.' in number on line %u\n",
 				info->lineno);
@@ -222,7 +223,7 @@ static void term(struct lex_info *info,
 		break;
 	case NTWT_SEMICOLON:
 		fprintf(stderr,
-			"Error: extra semicolon  on line %u\n",
+			"Error: extra semicolon on line %u\n",
 			info->lineno);
 		longjmp(info->err_jmp, 1);
 	case NTWT_EOI:
@@ -281,7 +282,12 @@ void asm_statements(struct ntwt_asm_program *program,
 	if (*error) {
 		asm_recycle(stack, program->expr);
 		program->expr = NULL;
-		return;
+		do {
+			printf("ayy\n");
+			if (info.token == NTWT_EOI)
+				return;
+			lex(&info, error);
+		} while (info.token != NTWT_SEMICOLON);
 	}
 
 	program->size = 0;
