@@ -14,6 +14,7 @@ void compile_and_send(const char *charset, struct ntwt_connection *sock,
 
 	asm_recycle(stack, program->expr);
         asm_statements(program, stack, (uint8_t *) *io_buff, &error);
+	asm_program_type_check(program, &error);
 	if (error)
 		return;
 	asm_program_bytecode(program, io_buff, io_size, msg_len, &error);
@@ -50,6 +51,7 @@ void compile_and_send(const char *charset, struct ntwt_connection *sock,
 
 	asm_recycle(stack, program->expr);
 	asm_statements(program, stack, uni_buff, &error);
+	asm_program_type_check(program, error);
 	if (error)
 		return;
 	asm_program_bytecode(program, io_buff, io_size, msg_len, &error);

@@ -80,12 +80,15 @@ static void lex_num(struct lex_info *info, const uint8_t *current,
 			return;
 		case '.':
 			num_type = NTWT_DOUBLE;
-			if (likely(!period))
+			if (likely(!period)) {
+				period = 1;
 				break;
+			}
 			fprintf(stderr,
 				"Error: to many '.' in number on line %u\n",
 				info->lineno);
 			*error = 1;
+			break;
 		case '\0':
 			fprintf(stderr,
 				"Error: unexpected end of input on line %u\n",
@@ -300,8 +303,55 @@ void asm_statements(struct ntwt_asm_program *program,
 	}
 }
 
+static void asm_command_type_check(struct ntwt_asm_expr *command, int *error)
+{
+	struct ntwt_asm_expr *term = command->contents.list;
+	const unsigned int command_line = term->lineno;
+	const char *command_name =
+		ntwt_op_name[(uint8_t) term->contents.op_code];
+	const int *params = ntwt_op_args[(uint8_t) term->contents.op_code];
+
+	term = term->next;
+
+	int i = 1;
+	for (; term; term = term->next, ++i) {
+		if (i > params[0]) {
+			fprintf(stderr,
+				"Error: too many arguments to %s on line %u, "
+				"expected %u, got more\n", command_name,
+				command_line, params[0]);
+			*error = 1;
+			return;
+		}
+		if (params[i] != term->type) {
+			fprintf(stderr,
+				"Error: on line %u expected type %s, got %s\n",
+				term->lineno, ntwt_type_name[params[i]],
+				ntwt_type_name[term->type]);
+			*error = 1;
+		}
+	}
+	if (i - 1 < params[0]) {
+		fprintf(stderr,
+			"Error: too few arguments to %s on line %u, "
+			"expected %u, got %u\n", command_name, command_line,
+			params[0], i - 1);
+		*error = 1;
+	}
+}
+
+void asm_program_type_check(struct ntwt_asm_program *program,
+			    int *error)
+{
+	struct ntwt_asm_expr *command;
+
+	for (command = program->expr;
+	     command; command = command->next)
+	        asm_command_type_check(command, error);
+}
+
 static void asm_term_bytecode(struct ntwt_asm_expr *term, char **code_ptr,
-			      jmp_buf err_jmp)
+			      int *error)
 {
 	switch (term->type) {
 	case NTWT_UINT:
@@ -320,48 +370,18 @@ static void asm_term_bytecode(struct ntwt_asm_expr *term, char **code_ptr,
 		fprintf(stderr,
 			"Error: Unrecognized type in asm tree to bytecode, %u.\n",
 			term->type);
-		longjmp(err_jmp, 1);
+		*error = 1;
 	}
 	*code_ptr += term->size;
 }
 
 static void asm_command_bytecode(struct ntwt_asm_expr *command, char **code_ptr,
-				 jmp_buf err_jmp)
+				 int *error)
 {
 	struct ntwt_asm_expr *term = command->contents.list;
-	const unsigned int command_line = term->lineno;
-	const char *command_name =
-		ntwt_op_name[(uint8_t) term->contents.op_code];
-	const int *params = ntwt_op_args[(uint8_t) term->contents.op_code];
 
-	asm_term_bytecode(term, code_ptr, err_jmp);
-	term = term->next;
-
-	int i = 1;
-	for (; term; term = term->next, ++i) {
-		if (i - 1 > params[0]) {
-			fprintf(stderr,
-				"Error: too many arguments to %s on line %u, "
-				"expected %u, got %i\n", command_name,
-				command_line, params[0], i);
-			longjmp(err_jmp, 1);
-		}
-		if (params[i] != term->type) {
-			fprintf(stderr,
-				"Error: on line %u expected type %s, got %s\n",
-				term->lineno, ntwt_type_name[params[i]],
-				ntwt_type_name[term->type]);
-			longjmp(err_jmp, 1);
-		}
-	        asm_term_bytecode(term, code_ptr, err_jmp);
-	}
-	if (i - 1 < params[0]) {
-		fprintf(stderr,
-			"Error: too few arguments to %s on line %u, "
-			"expected %u, got %u\n", command_name, command_line,
-			params[0], i - 1);
-		longjmp(err_jmp, 1);
-	}
+	for (; term; term = term->next)
+	        asm_term_bytecode(term, code_ptr, error);
 }
 
 void asm_program_bytecode(struct ntwt_asm_program *program,
@@ -375,17 +395,12 @@ void asm_program_bytecode(struct ntwt_asm_program *program,
 		*old_size = program->size;
 	}
 
-	jmp_buf err_jmp;
 	char *code_ptr = *code;
 	struct ntwt_asm_expr *command;
 
-	*error = setjmp(err_jmp);
-	if (*error)
-		return;
-
 	for (command = program->expr;
 	     command; command = command->next)
-	        asm_command_bytecode(command, &code_ptr, err_jmp);
+	        asm_command_bytecode(command, &code_ptr, error);
 }
 
 void asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *expr)
