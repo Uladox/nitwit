@@ -19,7 +19,7 @@ struct lex_info {
 	unsigned int lexme_lineno;
 	unsigned int lineno;
 	unsigned int offset;
-	jmp_buf err_jmp;
+	jmp_buf eoi_err;
 };
 
 static void lex_string(struct lex_info *info, const uint8_t *current,
@@ -34,8 +34,7 @@ static void lex_string(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: string has no ending quote on line %u\n",
 				info->lineno);
-			info->token = NTWT_EOI;
-			longjmp(info->err_jmp, 1);
+			longjmp(info->eoi_err, 1);
 		case '\\':
 			backslashed = !backslashed;
 			break;
@@ -82,21 +81,22 @@ static void lex_num(struct lex_info *info, const uint8_t *current,
 		case '.':
 			num_type = NTWT_DOUBLE;
 			if (likely(!period))
-				continue;
+				break;
 			fprintf(stderr,
 				"Error: to many '.' in number on line %u\n",
 				info->lineno);
-			longjmp(info->err_jmp, 1);
+			*error = 1;
 		case '\0':
 			fprintf(stderr,
 				"Error: unexpected end of input on line %u\n",
 				info->lineno);
-			longjmp(info->err_jmp, 1);
+			longjmp(info->eoi_err, 1);
 		default:
 			fprintf(stderr,
 				"Error: invalid char '%c' in number on line %u\n",
 				*current, info->lineno);
-			longjmp(info->err_jmp, 1);
+			*error = 1;
+			break;
 		}
 	}
 }
@@ -109,7 +109,7 @@ static void lex_op_code(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: unexpected end of input on line %u\n",
 				info->lineno);
-			longjmp(info->err_jmp, 1);
+			longjmp(info->eoi_err, 1);
 		}
 		++current;
 		--info->units;
@@ -166,7 +166,7 @@ static void lex(struct lex_info *info, int *error)
 			fprintf(stderr,
 				"Error: invalid argument on line %u, if you want an op_code, put '*' before it.\n",
 				info->lineno);
-			longjmp(info->err_jmp, 1);
+			*error = 1;
 		}
 		lex_op_code(info, current, error);
 		break;
@@ -217,7 +217,8 @@ static void term(struct lex_info *info,
 			fprintf(stderr,
 				"Error: unrecognized op code on line %u\n",
 				info->lineno);
-			longjmp(info->err_jmp, 1);
+			*error = 1;
+			return;
 		}
 		expr->contents.op_code = *result;
 		break;
@@ -225,18 +226,19 @@ static void term(struct lex_info *info,
 		fprintf(stderr,
 			"Error: extra semicolon on line %u\n",
 			info->lineno);
-		longjmp(info->err_jmp, 1);
+		*error = 1;
+		break;
 	case NTWT_EOI:
 		fprintf(stderr,
 			"Error: unexpected end of input on line %u\n",
 			info->lineno);
-		longjmp(info->err_jmp, 1);
+		longjmp(info->eoi_err, 1);
 	default:
 		/* Should never happen because lex should only return above */
 		fprintf(stderr,
 			"Error: unrecognized token on line %u\n",
 			info->lineno);
-		longjmp(info->err_jmp, 1);
+		*error = 1;
 	}
 }
 
@@ -278,17 +280,9 @@ void asm_statements(struct ntwt_asm_program *program,
 		.token = NTWT_SEMICOLON
 	};
 
-	*error = setjmp(info.err_jmp);
-	if (*error) {
-		asm_recycle(stack, program->expr);
-		program->expr = NULL;
-		do {
-			printf("ayy\n");
-			if (info.token == NTWT_EOI)
-				return;
-			lex(&info, error);
-		} while (info.token != NTWT_SEMICOLON);
-	}
+	*error = setjmp(info.eoi_err);
+	if (*error)
+		return;
 
 	program->size = 0;
 	lex(&info, error);
