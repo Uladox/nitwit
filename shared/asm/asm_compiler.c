@@ -287,6 +287,7 @@ void asm_statements(struct ntwt_asm_program *program,
 	if (*error)
 		return;
 
+	program->expr = NULL;
 	program->size = 0;
 	lex(&info, error);
 
