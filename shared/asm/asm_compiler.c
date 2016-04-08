@@ -11,6 +11,8 @@
 #include "../nitwit_macros.h"
 #include "../../gen/output/op_map.h"
 
+enum { ERROR_EOI=1, ERROR_SEMI };
+
 struct lex_info {
 	const uint8_t *lexme;
 	enum ntwt_token token;
@@ -19,7 +21,7 @@ struct lex_info {
 	unsigned int lexme_lineno;
 	unsigned int lineno;
 	unsigned int offset;
-	jmp_buf eoi_err;
+	jmp_buf err_jmp;
 };
 
 static void lex_string(struct lex_info *info, const uint8_t *current,
@@ -34,7 +36,7 @@ static void lex_string(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: string has no ending quote on line %u\n",
 				info->lineno);
-			longjmp(info->eoi_err, 1);
+			longjmp(info->err_jmp, ERROR_EOI);
 		case '\\':
 			backslashed = !backslashed;
 			break;
@@ -93,7 +95,7 @@ static void lex_num(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: unexpected end of input on line %u\n",
 				info->lineno);
-			longjmp(info->eoi_err, 1);
+			longjmp(info->err_jmp, ERROR_EOI);
 		default:
 			fprintf(stderr,
 				"Error: invalid char '%c' in number on line %u\n",
@@ -112,7 +114,7 @@ static void lex_op_code(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: unexpected end of input on line %u\n",
 				info->lineno);
-			longjmp(info->eoi_err, 1);
+			longjmp(info->err_jmp, ERROR_EOI);
 		}
 		++current;
 		--info->units;
@@ -230,15 +232,13 @@ static void term(struct lex_info *info,
 			"Error: extra semicolon on line %u\n",
 			info->lineno);
 		asm_recycle(stack, expr);
-		*load_expr = NULL;
-		*error = 1;
-		break;
+		longjmp(info->err_jmp, ERROR_SEMI);
 	case NTWT_EOI:
 		fprintf(stderr,
 			"Error: unexpected end of input on line %u\n",
 			info->lineno);
 		asm_recycle(stack, expr);
-		longjmp(info->eoi_err, 1);
+		longjmp(info->err_jmp, ERROR_EOI);
 	default:
 		/* Should never happen because lex should only return above */
 		fprintf(stderr,
@@ -259,8 +259,6 @@ static void command(struct lex_info *info,
 	*load_expr = NULL;
 
 	term(info, &expr, stack, error);
-	if (!expr)
-		return;
 
 	cmd = (*load_expr = pop(stack));
 	cmd->type = NTWT_COMMAND;
@@ -293,13 +291,12 @@ void asm_statements(struct ntwt_asm_program *program,
 	program->expr = NULL;
 	program->size = 0;
 
-	*error = setjmp(info.eoi_err);
+	*error = setjmp(info.err_jmp);
 	if (*error) {
-		return;
-		/* if (*error == ERROR_EOI) */
-		/* 	return; */
-		/* else if (*error == ERROR_SEMI) */
-		/* 	goto next_command; */
+		if (*error == ERROR_EOI)
+			return;
+		else if (*error == ERROR_SEMI)
+			goto next_command;
 
 	}
 
@@ -309,15 +306,13 @@ void asm_statements(struct ntwt_asm_program *program,
 	expr = program->expr;
 	program->size += expr->size;
 
-/* next_command: */
+next_command:
 
 	lex(&info, error);
 	while (info.token != NTWT_EOI) {
 		command(&info, &expr->next, stack, error);
-		if (expr->next) {
-			expr = expr->next;
-			program->size += expr->size;
-		}
+		expr = expr->next;
+		program->size += expr->size;
 		lex(&info, error);
 	}
 }
