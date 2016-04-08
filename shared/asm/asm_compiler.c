@@ -11,7 +11,7 @@
 #include "../nitwit_macros.h"
 #include "../../gen/output/op_map.h"
 
-enum { ERROR_EOI=1, ERROR_SEMI };
+enum { ERROR_EOI=1, ERROR_SEMI, ERROR_BAD_CMD };
 
 struct lex_info {
 	const uint8_t *lexme;
@@ -173,6 +173,7 @@ static void lex(struct lex_info *info, int *error)
 				info->lineno);
 			*error = 1;
 		}
+
 		lex_op_code(info, current, error);
 		break;
 	}
@@ -222,6 +223,8 @@ static void term(struct lex_info *info,
 			fprintf(stderr,
 				"Error: unrecognized op code on line %u\n",
 				info->lineno);
+			asm_recycle(stack, expr);
+			*load_expr = NULL;
 			*error = 1;
 			return;
 		}
@@ -255,10 +258,19 @@ static void command(struct lex_info *info,
 {
 	struct ntwt_asm_expr *cmd;
 	struct ntwt_asm_expr *expr;
+	int tmp = *error;
 
 	*load_expr = NULL;
+	*error = 0;
 
 	term(info, &expr, stack, error);
+
+	if (*error) {
+		asm_recycle(stack, expr);
+		longjmp(info->err_jmp, ERROR_BAD_CMD);
+	} else {
+		*error = tmp;
+	}
 
 	cmd = (*load_expr = pop(stack));
 	cmd->type = NTWT_COMMAND;
@@ -292,14 +304,23 @@ void asm_statements(struct ntwt_asm_program *program,
 	program->size = 0;
 
 	*error = setjmp(info.err_jmp);
-	if (*error) {
-		if (*error == ERROR_EOI)
-			return;
-		else if (*error == ERROR_SEMI)
-			goto next_command;
-
+	switch (*error) {
+	case 0:
+		break;
+	case ERROR_EOI:
+		return;
+	case ERROR_SEMI:
+		goto next_command;
+	case ERROR_BAD_CMD:
+		lex(&info, error);
+		while (info.token != NTWT_SEMICOLON) {
+			struct ntwt_asm_expr *tmp;
+			term(&info, &tmp, stack, error);
+			asm_recycle(stack, tmp);
+			lex(&info, error);
+		}
+		goto next_command;
 	}
-
 
 	lex(&info, error);
 	command(&info, &program->expr, stack, error);
