@@ -235,6 +235,7 @@ static void term(struct lex_info *info,
 		fprintf(stderr,
 			"Error: unexpected end of input on line %u\n",
 			info->lineno);
+		asm_recycle(stack, expr);
 		longjmp(info->eoi_err, 1);
 	default:
 		/* Should never happen because lex should only return above */
@@ -250,22 +251,24 @@ static void command(struct lex_info *info,
 		    struct ntwt_asm_expr **stack,
 		    int *error)
 {
-	struct ntwt_asm_expr *expr = (*load_expr = pop(stack));
-	struct ntwt_asm_expr *list;
+	struct ntwt_asm_expr *cmd;
+	struct ntwt_asm_expr *expr;
 
-	expr->type = NTWT_COMMAND;
-	expr->next = NULL;
-	expr->size = 0;
+	*load_expr = NULL;
 
-	term(info, &expr->contents.list, stack, error);
-	list = expr->contents.list;
-	expr->size += list->size;
+	term(info, &expr, stack, error);
+
+	cmd = (*load_expr = pop(stack));
+	cmd->type = NTWT_COMMAND;
+	cmd->next = NULL;
+	cmd->contents.list = expr;
+	cmd->size = expr->size;
+
 	lex(info, error);
-
 	while (info->token != NTWT_SEMICOLON) {
-	        term(info, &list->next, stack, error);
-		list = list->next;
-		expr->size += list->size;
+	        term(info, &expr->next, stack, error);
+		expr = expr->next;
+		cmd->size += expr->size;
 		lex(info, error);
 	}
 }

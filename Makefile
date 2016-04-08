@@ -1,3 +1,6 @@
+CONFIG_FILE = config
+CONFIG_COMP = `cat $(CONFIG_FILE)`
+
 SRC_FILES = \
 	server/server.c \
 	server/server_args.c \
@@ -61,9 +64,9 @@ map_gen = \
 	shared/hashmap/hashmap.c \
 	shared/vm/vm.h
 
-ifndef ASSUME_UTF8
-ASSUME_UTF8 = 1
-endif
+# ifndef ASSUME_UTF8
+# ASSUME_UTF8 = 1
+# endif
 
 debug: $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client
 release: $(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client
@@ -83,23 +86,23 @@ $(RELEASE_PATH)/$(1): $(addprefix $(RELEASE_PATH)/,$(3))
 	gcc -std=gnu99 -Ofast -Wall $(2) $$^ -o $$@ $(4)
 endef
 
-$(eval $(call make-execs,nitwit_server,-DASSUME_UTF8=$(ASSUME_UTF8), \
+$(eval $(call make-execs,nitwit_server,, \
 	$(SERVER_FILES),-lunistring -pthread -ldl));
-$(eval $(call make-execs,nitwit_client,-DASSUME_UTF8=$(ASSUME_UTF8), \
+$(eval $(call make-execs,nitwit_client,, \
 	$(CLIENT_FILES),-lunistring));
 
 define make-objs
 $(eval x = $(patsubst %.c, %.o, $(notdir $(1))))
-$(patsubst %.c, $(DEBUG_PATH)/%.o, $(notdir $(1))): $(1) $($(x)) \
+$(patsubst %.c, $(DEBUG_PATH)/%.o, $(notdir $(1))): $(1) $($(x)) config \
 	$(wildcard $(patsubst %.c, %.h, $(1)))
 	gcc -std=gnu99 -g -c -Wall $(2) $$< -o $$@
-$(patsubst %.c, $(RELEASE_PATH)/%.o, $(notdir $(1))): $(1) $($(x)) \
+$(patsubst %.c, $(RELEASE_PATH)/%.o, $(notdir $(1))): $(1) $($(x)) config \
 	$(wildcard $(patsubst %.c, %.h, $(1)))
 	gcc -std=gnu99 -Ofast -c -Wall $(2) $$< -o $$@
 endef
 
 $(foreach src,$(SRC_FILES),$(eval $(call make-objs,$(src), \
-	-DASSUME_UTF8=$(ASSUME_UTF8))));
+	$(CONFIG_COMP))));
 
 .PHONY: clean
 clean:
