@@ -223,8 +223,6 @@ static void term(struct lex_info *info,
 			fprintf(stderr,
 				"Error: unrecognized op code on line %u\n",
 				info->lineno);
-			asm_recycle(stack, expr);
-			*load_expr = NULL;
 			*error = 1;
 			return;
 		}
@@ -263,11 +261,19 @@ static void command(struct lex_info *info,
 	*load_expr = NULL;
 	*error = 0;
 
+	/* Does term first in case of EOI error */
 	term(info, &expr, stack, error);
 
+	/* Deals with incorrect op code for first term  */
 	if (*error) {
 		asm_recycle(stack, expr);
-		longjmp(info->err_jmp, ERROR_BAD_CMD);
+		lex(info, error);
+		while (info->token != NTWT_SEMICOLON) {
+			term(info, &expr, stack, error);
+			asm_recycle(stack, expr);
+			lex(info, error);
+		}
+	        longjmp(info->err_jmp, ERROR_BAD_CMD);
 	} else {
 		*error = tmp;
 	}
@@ -303,6 +309,7 @@ void asm_statements(struct ntwt_asm_program *program,
 	program->expr = NULL;
 	program->size = 0;
 
+	/* Error catching */
 	*error = setjmp(info.err_jmp);
 	switch (*error) {
 	case 0:
@@ -310,19 +317,17 @@ void asm_statements(struct ntwt_asm_program *program,
 	case ERROR_EOI:
 		return;
 	case ERROR_SEMI:
-		goto next_command;
 	case ERROR_BAD_CMD:
-		lex(&info, error);
-		while (info.token != NTWT_SEMICOLON) {
-			struct ntwt_asm_expr *tmp;
-			term(&info, &tmp, stack, error);
-			asm_recycle(stack, tmp);
-			lex(&info, error);
-		}
+		if (!program->expr)
+			goto first_command;
 		goto next_command;
 	}
 
+first_command:
+
 	lex(&info, error);
+	if (info.token == NTWT_EOI)
+		return;
 	command(&info, &program->expr, stack, error);
 	expr = program->expr;
 	program->size += expr->size;
