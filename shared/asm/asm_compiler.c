@@ -229,6 +229,8 @@ static void term(struct lex_info *info,
 		fprintf(stderr,
 			"Error: extra semicolon on line %u\n",
 			info->lineno);
+		asm_recycle(stack, expr);
+		*load_expr = NULL;
 		*error = 1;
 		break;
 	case NTWT_EOI:
@@ -257,6 +259,8 @@ static void command(struct lex_info *info,
 	*load_expr = NULL;
 
 	term(info, &expr, stack, error);
+	if (!expr)
+		return;
 
 	cmd = (*load_expr = pop(stack));
 	cmd->type = NTWT_COMMAND;
@@ -286,23 +290,34 @@ void asm_statements(struct ntwt_asm_program *program,
 		.token = NTWT_SEMICOLON
 	};
 
-	*error = setjmp(info.eoi_err);
-	if (*error)
-		return;
-
 	program->expr = NULL;
 	program->size = 0;
-	lex(&info, error);
 
+	*error = setjmp(info.eoi_err);
+	if (*error) {
+		return;
+		/* if (*error == ERROR_EOI) */
+		/* 	return; */
+		/* else if (*error == ERROR_SEMI) */
+		/* 	goto next_command; */
+
+	}
+
+
+	lex(&info, error);
 	command(&info, &program->expr, stack, error);
 	expr = program->expr;
 	program->size += expr->size;
-	lex(&info, error);
 
+/* next_command: */
+
+	lex(&info, error);
 	while (info.token != NTWT_EOI) {
 		command(&info, &expr->next, stack, error);
-		expr = expr->next;
-		program->size += expr->size;
+		if (expr->next) {
+			expr = expr->next;
+			program->size += expr->size;
+		}
 		lex(&info, error);
 	}
 }
