@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
-#include <setjmp.h>
 #include <unistr.h>
 
 #define NTWT_SHORT_NAMES
@@ -21,13 +20,17 @@ struct lex_info {
 	unsigned int lexme_lineno;
 	unsigned int lineno;
 	unsigned int offset;
-	jmp_buf err_jmp;
+	struct ntwt_asm_expr **cmds;
+	struct ntwt_asm_expr **trms;
+	int *error;
+
 };
 
-static void lex_string(struct lex_info *info, const uint8_t *current,
-		       int *error)
+static void lex_string(struct lex_info *info, const uint8_t *current)
 {
 	int backslashed = 0;
+
+	info->token =  NTWT_STRING;
 	while (1) {
 		++current;
 		--info->units;
@@ -36,7 +39,9 @@ static void lex_string(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: string has no ending quote on line %u\n",
 				info->lineno);
-			longjmp(info->err_jmp, ERROR_EOI);
+			info->lexlen = current - info->lexme;
+			*info->error = 1;
+			return;
 		case '\\':
 			backslashed = !backslashed;
 			break;
@@ -48,7 +53,6 @@ static void lex_string(struct lex_info *info, const uint8_t *current,
 				break;
 			info->lexlen = current - info->lexme;
 			info->offset = 1;
-			info->token =  NTWT_STRING;
 			return;
 		default:
 			backslashed = 0;
@@ -57,8 +61,7 @@ static void lex_string(struct lex_info *info, const uint8_t *current,
 	}
 }
 
-static void lex_num(struct lex_info *info, const uint8_t *current,
-		    int *error)
+static void lex_num(struct lex_info *info, const uint8_t *current)
 {
 	enum ntwt_token num_type = NTWT_UINT;
 	int period = 0;
@@ -76,10 +79,6 @@ static void lex_num(struct lex_info *info, const uint8_t *current,
 		case '\v':
 		case '\f':
 		case '\r':
-		case ';':
-			info->lexlen = current - info->lexme;
-			info->token = num_type;
-			return;
 		case '.':
 			num_type = NTWT_DOUBLE;
 			if (likely(!period)) {
@@ -89,41 +88,44 @@ static void lex_num(struct lex_info *info, const uint8_t *current,
 			fprintf(stderr,
 				"Error: to many '.' in number on line %u\n",
 				info->lineno);
-			*error = 1;
+			*info->error = 1;
 			break;
 		case '\0':
 			fprintf(stderr,
 				"Error: unexpected end of input on line %u\n",
 				info->lineno);
-			longjmp(info->err_jmp, ERROR_EOI);
+			*info->error = 1;
+		case ';':
+			info->lexlen = current - info->lexme;
+			info->token = num_type;
+			return;
 		default:
 			fprintf(stderr,
 				"Error: invalid char '%c' in number on line %u\n",
 				*current, info->lineno);
-			*error = 1;
+			*info->error = 1;
 			break;
 		}
 	}
 }
 
-static void lex_op_code(struct lex_info *info, const uint8_t *current,
-			int *error)
+static void lex_op_code(struct lex_info *info, const uint8_t *current)
 {
-	while (!isspace(*current) && *current != ';') {
-		if (*current == '\0') {
-			fprintf(stderr,
-				"Error: unexpected end of input on line %u\n",
-				info->lineno);
-			longjmp(info->err_jmp, ERROR_EOI);
-		}
+	while (!isspace(*current) && *current != ';' && *current != '\0') {
 		++current;
 		--info->units;
+	}
+	if (*current == '\0') {
+		fprintf(stderr,
+			"Error: unexpected end of input on line %u\n",
+			info->lineno);
+		*info->error = 1;
 	}
 	info->lexlen = current - info->lexme;
 	info->token = NTWT_OP_CODE;
 }
 
-static void lex(struct lex_info *info, int *error)
+static void lex(struct lex_info *info)
 {
 	const uint8_t *current = info->lexme;
 	ucs4_t puc;
@@ -137,7 +139,6 @@ static void lex(struct lex_info *info, int *error)
 		--info->units;
 	}
 
-	info->lexlen = 1;
 	info->offset = 0;
 	info->lexme = current;
 	info->lexme_lineno = info->lineno;
@@ -145,22 +146,24 @@ static void lex(struct lex_info *info, int *error)
 	u8_mbtouc_unsafe(&puc, current, info->units);
 	switch (puc) {
 	case '\0':
+		info->lexlen = 0;
 		info->token = NTWT_EOI;
 		break;
 	case ';':
+		info->lexlen = 1;
 		info->token = NTWT_SEMICOLON;
 		break;
 	case '"':
 		++info->lexme;
-		lex_string(info, current, error);
+		lex_string(info, current);
 		break;
 	case '0' ... '9':
-		lex_num(info, current, error);
+		lex_num(info, current);
 		break;
 	case '*':
 		/* Assumes an op code after '*' */
 		++info->lexme;
-		lex_op_code(info, current, error);
+		lex_op_code(info, current);
 		break;
 	case U'🐣':
 		printf(u8"λ🐣!\n");
@@ -171,10 +174,10 @@ static void lex(struct lex_info *info, int *error)
 			fprintf(stderr,
 				"Error: invalid argument on line %u, if you want an op_code, put '*' before it.\n",
 				info->lineno);
-			*error = 1;
+			*info->error = 1;
 		}
 
-		lex_op_code(info, current, error);
+		lex_op_code(info, current);
 		break;
 	}
 }
@@ -190,157 +193,113 @@ static struct ntwt_asm_expr *pop(struct ntwt_asm_expr **stack)
 }
 
 static void term(struct lex_info *info,
-		 struct ntwt_asm_expr **load_expr,
 		 struct ntwt_asm_expr **stack,
-		 int *error)
+		 struct ntwt_asm_expr *cmd)
 {
-	struct ntwt_asm_expr *expr = (*load_expr = pop(stack));
+	struct ntwt_asm_expr *trm = pop(stack);
 
-	expr->lineno = info->lexme_lineno;
-	expr->next = NULL;
-	switch (expr->type = info->token) {
+	*info->trms = trm;
+	trm->lineno = info->lexme_lineno;
+	trm->next = NULL;
+	switch (trm->type = info->token) {
 	case NTWT_UINT:
-		expr->size = sizeof(unsigned int);
 		/* treats utf8 as ascii for stroul */
-		expr->contents.integer = strtoul((char *) info->lexme, NULL, 0);
+	        cmd->size += (trm->size = sizeof(unsigned int));
+		trm->contents.integer = strtoul((char *) info->lexme, NULL, 0);
 		break;
 	case NTWT_DOUBLE:
-		expr->size = sizeof(double);
 		/* treats utf8 as ascii for strod */
-		expr->contents.decimal = strtod((char *) info->lexme, NULL);
+		cmd->size += (trm->size = sizeof(double));
+		trm->contents.decimal = strtod((char *) info->lexme, NULL);
 		break;
 	case NTWT_STRING:
-		expr->contents.string = malloc(expr->size = info->lexlen + 1);
-		u8_strncpy(expr->contents.string, info->lexme, info->lexlen);
-		expr->contents.string[info->lexlen] = '\0';
+		cmd->size += (trm->size = info->lexlen + 1);
+		trm->contents.string = malloc(trm->size);
+		u8_strncpy(trm->contents.string, info->lexme, info->lexlen);
+		trm->contents.string[info->lexlen] = '\0';
 		break;
 	case NTWT_OP_CODE:
-		expr->size = sizeof(char);
+		cmd->size += (trm->size = sizeof(char));
 
-		char *result = ntwt_hashmap_get(&ntwt_op_map, info->lexme,
-						info->lexlen);
+		char *result = hashmap_get(&ntwt_op_map,
+					   info->lexme,
+					   info->lexlen);
+
 		if (!result) {
+			trm->size = -1;
 			fprintf(stderr,
 				"Error: unrecognized op code on line %u\n",
 				info->lineno);
-			*error = 1;
-			return;
+			*info->error = 1;
+			break;
 		}
-		expr->contents.op_code = *result;
+		trm->contents.op_code = *result;
 		break;
-	case NTWT_SEMICOLON:
-		fprintf(stderr,
-			"Error: extra semicolon on line %u\n",
-			info->lineno);
-		asm_recycle(stack, expr);
-		longjmp(info->err_jmp, ERROR_SEMI);
-	case NTWT_EOI:
-		fprintf(stderr,
-			"Error: unexpected end of input on line %u\n",
-			info->lineno);
-		asm_recycle(stack, expr);
-		longjmp(info->err_jmp, ERROR_EOI);
 	default:
 		/* Should never happen because lex should only return above */
 		fprintf(stderr,
 			"Error: unrecognized token on line %u\n",
 			info->lineno);
-		*error = 1;
+		*info->error = 1;
 	}
+	info->trms = &trm->next;
+	lex(info);
 }
 
 static void command(struct lex_info *info,
-		    struct ntwt_asm_expr **load_expr,
 		    struct ntwt_asm_expr **stack,
-		    int *error)
+		    struct ntwt_asm_program *program)
 {
-	struct ntwt_asm_expr *cmd;
-	struct ntwt_asm_expr *expr;
-	int tmp = *error;
+	struct ntwt_asm_expr *cmd = pop(stack);
 
-	*load_expr = NULL;
-	*error = 0;
-
-	/* Does term first in case of EOI error */
-	term(info, &expr, stack, error);
-
-	/* Deals with incorrect op code for first term  */
-	if (*error) {
-		asm_recycle(stack, expr);
-		lex(info, error);
-		while (info->token != NTWT_SEMICOLON) {
-			term(info, &expr, stack, error);
-			asm_recycle(stack, expr);
-			lex(info, error);
-		}
-	        longjmp(info->err_jmp, ERROR_BAD_CMD);
-	} else {
-		*error = tmp;
-	}
-
-	cmd = (*load_expr = pop(stack));
 	cmd->type = NTWT_COMMAND;
 	cmd->next = NULL;
-	cmd->contents.list = expr;
-	cmd->size = expr->size;
+	cmd->size = 0;
+	cmd->contents.list = NULL;
+	info->trms = &cmd->contents.list;
 
-	lex(info, error);
-	while (info->token != NTWT_SEMICOLON) {
-	        term(info, &expr->next, stack, error);
-		expr = expr->next;
-		cmd->size += expr->size;
-		lex(info, error);
+	while (info->token != NTWT_SEMICOLON &&
+	       info->token != NTWT_EOI)
+	        term(info, stack, cmd);
+
+	if (cmd->size == 0 ||
+	    cmd->contents.list[0].size == -1 ||
+	    cmd->contents.list[0].type != NTWT_OP_CODE) {
+		fprintf(stderr,
+			"Error: invalid expression on line %u\n",
+			info->lineno);
+		*info->error = 1;
+		asm_recycle(stack, cmd);
+		lex(info);
+		return;
 	}
+
+	program->size += cmd->size;
+	*info->cmds = cmd;
+	info->cmds = &cmd->next;
+	lex(info);
 }
 
 void asm_statements(struct ntwt_asm_program *program,
 		    struct ntwt_asm_expr **stack,
 		    const uint8_t *code, int *error)
 {
-	struct ntwt_asm_expr *expr;
 	struct lex_info info = {
 		.lexme = code,
 		.lexlen = 0,
 		.units = u8_strlen(code),
 		.lineno = 0,
-		.token = NTWT_SEMICOLON
+		.token = NTWT_SEMICOLON,
+		.cmds = &program->expr,
+		.error = error
 	};
 
-	program->expr = NULL;
 	program->size = 0;
+	program->expr = NULL;
 
-	/* Error catching */
-	*error = setjmp(info.err_jmp);
-	switch (*error) {
-	case 0:
-		break;
-	case ERROR_EOI:
-		return;
-	case ERROR_SEMI:
-	case ERROR_BAD_CMD:
-		if (!program->expr)
-			goto first_command;
-		goto next_command;
-	}
-
-first_command:
-
-	lex(&info, error);
-	if (info.token == NTWT_EOI)
-		return;
-	command(&info, &program->expr, stack, error);
-	expr = program->expr;
-	program->size += expr->size;
-
-next_command:
-
-	lex(&info, error);
-	while (info.token != NTWT_EOI) {
-		command(&info, &expr->next, stack, error);
-		expr = expr->next;
-		program->size += expr->size;
-		lex(&info, error);
-	}
+	lex(&info);
+	while (info.token != NTWT_EOI)
+		command(&info, stack, program);
 }
 
 static void asm_command_type_check(struct ntwt_asm_expr *command, int *error)
