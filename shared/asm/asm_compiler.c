@@ -79,6 +79,10 @@ static void lex_num(struct lex_info *info, const uint8_t *current)
 		case '\v':
 		case '\f':
 		case '\r':
+		case ';':
+			info->lexlen = current - info->lexme;
+			info->token = num_type;
+			return;
 		case '.':
 			num_type = NTWT_DOUBLE;
 			if (likely(!period)) {
@@ -95,7 +99,6 @@ static void lex_num(struct lex_info *info, const uint8_t *current)
 				"Error: unexpected end of input on line %u\n",
 				info->lineno);
 			*info->error = 1;
-		case ';':
 			info->lexlen = current - info->lexme;
 			info->token = num_type;
 			return;
