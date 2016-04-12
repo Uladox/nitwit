@@ -11,7 +11,8 @@ SRC_FILES = \
 	shared/vm/vm.c \
 	shared/vm/state.c \
 	shared/vm/vm_data.c \
-	shared/asm/asm_compiler.c \
+	shared/asm/compiler.c \
+	shared/asm/lex.c \
 	shared/unicode/unihelpers.c \
 	shared/hashmap/hashmap.c \
 	gen/output/op_map.c
@@ -35,7 +36,8 @@ CLIENT_FILES = \
 	client.o \
 	client_io.o \
 	socket.o \
-	asm_compiler.o \
+	compiler.o \
+	lex.o \
 	vm_data.o \
 	unihelpers.o \
 	hashmap.o \
@@ -49,7 +51,7 @@ client.o = \
 	client/client_io.h \
 	shared/socket/socket.h \
 	shared/vm/vm.h \
-	shared/asm/asm_compiler.h \
+	shared/asm/compiler.h \
 	shared/unicode/unihelpers.h
 
 op_map = \
