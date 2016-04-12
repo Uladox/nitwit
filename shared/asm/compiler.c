@@ -35,7 +35,7 @@ static void term(struct ntwt_asm_lex_info *info,
 	switch (trm->type = info->token) {
 	case NTWT_UINT:
 		/* treats utf8 as ascii for stroul */
-	        cmd->size += (trm->size = sizeof(unsigned int));
+		cmd->size += (trm->size = sizeof(unsigned int));
 		trm->contents.integer = strtoul((char *) info->lexme, NULL, 0);
 		break;
 	case NTWT_DOUBLE:
@@ -88,7 +88,7 @@ static void command(struct ntwt_asm_lex_info *info,
 
 	while (info->token != NTWT_SEMICOLON &&
 	       info->token != NTWT_EOI)
-	        term(info, stack, cmd);
+		term(info, stack, cmd);
 	lex(info);
 
 	if (cmd->size == 0) {
@@ -117,7 +117,6 @@ static void command(struct ntwt_asm_lex_info *info,
 error:
 	*info->error = 1;
 	asm_recycle(stack, cmd);
-	return;
 }
 
 void asm_statements(struct ntwt_asm_program *program,
@@ -153,11 +152,12 @@ static void asm_command_type_check(struct ntwt_asm_expr *command, int *error)
 	term = term->next;
 
 	int i = 1;
+
 	for (; term; term = term->next, ++i) {
 		if (i > params[0]) {
 			fprintf(stderr,
-				"Error: too many arguments to %s on line %u, "
-				"expected %u, got more\n", command_name,
+				"Error: too many arguments to %s on line %u, expected %u, got more\n",
+				command_name,
 				command_line, params[0]);
 			*error = 1;
 			return;
@@ -172,8 +172,8 @@ static void asm_command_type_check(struct ntwt_asm_expr *command, int *error)
 	}
 	if (i - 1 < params[0]) {
 		fprintf(stderr,
-			"Error: too few arguments to %s on line %u, "
-			"expected %u, got %u\n", command_name, command_line,
+			"Error: too few arguments to %s on line %u, expected %u, got %u\n",
+			command_name, command_line,
 			params[0], i - 1);
 		*error = 1;
 	}
@@ -186,7 +186,7 @@ void asm_program_type_check(struct ntwt_asm_program *program,
 
 	for (command = program->expr;
 	     command; command = command->next)
-	        asm_command_type_check(command, error);
+		asm_command_type_check(command, error);
 }
 
 static void asm_term_bytecode(struct ntwt_asm_expr *term, char **code_ptr,
@@ -220,7 +220,7 @@ static void asm_command_bytecode(struct ntwt_asm_expr *command, char **code_ptr,
 	struct ntwt_asm_expr *term = command->contents.list;
 
 	for (; term; term = term->next)
-	        asm_term_bytecode(term, code_ptr, error);
+		asm_term_bytecode(term, code_ptr, error);
 }
 
 void asm_program_bytecode(struct ntwt_asm_program *program,
@@ -239,7 +239,7 @@ void asm_program_bytecode(struct ntwt_asm_program *program,
 
 	for (command = program->expr;
 	     command; command = command->next)
-	        asm_command_bytecode(command, &code_ptr, error);
+		asm_command_bytecode(command, &code_ptr, error);
 }
 
 void asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *expr)

@@ -15,8 +15,7 @@ static char args_doc[] = { 0 };
 /* The options we understand. */
 static struct argp_option options[] = {
 	{"image",  'i', "FILE", 0,
-	 "Loads from FILE instead of state.ilk, also if output is not set it "
-	 "saves to FILE instead of state.ilk" },
+	 "Loads from FILE instead of state.ilk, also if output is not set it saves to FILE instead of state.ilk" },
 	{"none",   'n', 0,      0, "Does not load a program image"},
 	{"output", 'o', "FILE", 0, "Saves to FILE instead of state.ilk" },
 	{ 0 }
@@ -26,32 +25,33 @@ static struct argp_option options[] = {
 /* Parse a single option. */
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
-  /* Get the input argument from argp_parse, which we
-     know is a pointer to our arguments structure. */
-  struct ntwt_svr_opts *opts = state->input;
+	/* Get the input argument from argp_parse, which we
+	 * know is a pointer to our arguments structure.
+	 */
+	struct ntwt_svr_opts *opts = state->input;
 
-  switch (key) {
-  case 'n':
-	  opts->load_image = 0;
-	  break;
-  case 'i':
-	  opts->image = arg;
-	  if (!opts->diff_output)
-		  opts->output = arg;
-	  break;
-  case 'o':
-	  opts->output = arg;
-	  opts->diff_output = 1;
-	  break;
-  case ARGP_KEY_ARG:
-	  argp_usage(state);
-	  break;
-  case ARGP_KEY_END:
-	  break;
-  default:
-	  return ARGP_ERR_UNKNOWN;
-  }
-  return 0;
+	switch (key) {
+	case 'n':
+		opts->load_image = 0;
+		break;
+	case 'i':
+		opts->image = arg;
+		if (!opts->diff_output)
+			opts->output = arg;
+		break;
+	case 'o':
+		opts->output = arg;
+		opts->diff_output = 1;
+		break;
+	case ARGP_KEY_ARG:
+		argp_usage(state);
+		break;
+	case ARGP_KEY_END:
+		break;
+	default:
+		return ARGP_ERR_UNKNOWN;
+	}
+	return 0;
 }
 
 /* Our argp parser. */

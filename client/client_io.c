@@ -13,7 +13,7 @@ void compile_and_send(const char *charset, struct ntwt_connection *sock,
 	int error = 0;
 
 	asm_recycle(stack, program->expr);
-        asm_statements(program, stack, (uint8_t *) *io_buff, &error);
+	asm_statements(program, stack, (uint8_t *) *io_buff, &error);
 	asm_program_type_check(program, &error);
 	if (error)
 		return;
@@ -36,8 +36,11 @@ void free_conversions(void)
 
 #else
 #warning "Less efficient if your locale is utf8."
-static uint8_t *uni_buff = NULL;
-static size_t uni_size = 0;
+/*  C standard requires global, uninitialized variables to be
+ *  implicitly initialized to zero or NULL.
+ */
+static uint8_t *uni_buff;
+static size_t uni_size;
 
 void compile_and_send(const char *charset, struct ntwt_connection *sock,
 		      struct ntwt_asm_program *program,

@@ -9,7 +9,7 @@
 #include "../shared/vm/vm.h"
 #include "server_args.h"
 
-#define IMAGE_OPEN_FAILURE \
+#define IMAGE_OPEN_FAILURE						\
 	"Error: Failed to open image file, it should be in the current directory or the first command line argument. If it is the former, its name should be state.ilk. Errno: %d (%s)\n"
 
 void *repl_getline(void *input)
@@ -20,16 +20,16 @@ void *repl_getline(void *input)
 	unsigned int size = 256;
 	char *str = malloc(size);
 
-        while (!connection_end_check(sock)) {
+	while (!connection_end_check(sock)) {
 		int msg_size;
 
 		if (connection_read(sock, &str, &size, &msg_size, 1) == 1) {
 			str[msg_size] = NTWT_OP_END;
 			ntwt_interprete(state, str, output);
 		}
-        }
+	}
 	free(str);
-        connection_free(sock);
+	connection_free(sock);
 	printf("bye!\n");
 	return NULL;
 }
@@ -43,7 +43,7 @@ static void load_state(struct ntwt_vm_state *state, FILE *image,
 	fseek(image, 0, SEEK_END);
 	image_size = ftell(image);
 	rewind(image);
-        image_code = malloc(image_size + 1);
+	image_code = malloc(image_size + 1);
 	fread(image_code, image_size, sizeof(char), image);
 	image_code[image_size] = NTWT_OP_END;
 	ntwt_interprete(state, image_code, out_name);
@@ -60,15 +60,16 @@ int main(int argc, char *argv[])
 	struct ntwt_connection *connect_socket;
 
 	struct ntwt_svr_opts opts = {
-	        .load_image = 1,
+		.load_image = 1,
 		.diff_output = 0,
 		.image = "state.ilk",
 		.output = "state.ilk"
 	};
 
-        ntwt_svr_args_parse(argc, argv, &opts);
+	ntwt_svr_args_parse(argc, argv, &opts);
 	if (opts.load_image) {
 		FILE *image = fopen(opts.image, "rb");
+
 		if (!image) {
 			fprintf(stderr,
 				IMAGE_OPEN_FAILURE,
@@ -83,7 +84,7 @@ int main(int argc, char *argv[])
 	pthread_create(&user_thread, NULL, repl_getline,
 		       &(void *[]) { connect_socket, &state, opts.output });
 	pthread_join(user_thread, NULL);
-        connecter_free(find_socket);
+	connecter_free(find_socket);
 	pthread_exit(NULL);
 	return 0;
 }

@@ -55,9 +55,6 @@ static void *threaded_awareness_run(void *a)
 }
 
 
-
-
-
 void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		     const char *restrict exec_ptr,
 		     const char *out_name)
