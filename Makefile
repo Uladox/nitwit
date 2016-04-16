@@ -1,7 +1,7 @@
-CONFIG_FILE = config
-CONFIG_COMP = `cat $(CONFIG_FILE)`
+CONFIG_FILE := config
+CONFIG_COMP := $(shell cat "$(CONFIG_FILE)")
 
-SRC_FILES = \
+SRC_FILES := \
 	server/server.c \
 	server/server_args.c \
 	client/client.c \
@@ -18,13 +18,13 @@ SRC_FILES = \
 	gen/output/op_map.c
 
 
-DEBUG_PATH = bin/debug
-DEBUG_FILES = $(patsubst %,$(DEBUG_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
+DEBUG_PATH := bin/debug
+DEBUG_FILES := $(patsubst %,$(DEBUG_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
 
-RELEASE_PATH = bin/release
-RELEASE_FILES = $(patsubst %,$(RELEASE_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
+RELEASE_PATH := bin/release
+RELEASE_FILES := $(patsubst %,$(RELEASE_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
 
-SERVER_FILES = \
+SERVER_FILES := \
 	server.o \
 	server_args.o \
 	socket.o \
@@ -32,7 +32,7 @@ SERVER_FILES = \
 	state.o \
 	practise.o
 
-CLIENT_FILES = \
+CLIENT_FILES := \
 	client.o \
 	client_io.o \
 	socket.o \
@@ -43,32 +43,28 @@ CLIENT_FILES = \
 	hashmap.o \
 	op_map.o
 
-server.o = \
+server.o := \
 	shared/socket/socket.h \
 	shared/vm/vm.h
 
-client.o = \
+client.o := \
 	client/client_io.h \
 	shared/socket/socket.h \
 	shared/vm/vm.h \
 	shared/asm/compiler.h \
 	shared/unicode/unihelpers.h
 
-op_map = \
+op_map := \
 	gen/programs/bin/map_gen \
 	gen/output/op_map.h \
 	gen/input/op_map_opener.c \
 	gen/input/op_map_closer.c \
 
-map_gen = \
+map_gen := \
 	gen/programs/map_gen.c \
 	shared/hashmap/hashmap.h \
 	shared/hashmap/hashmap.c \
 	shared/vm/vm.h
-
-# ifndef ASSUME_UTF8
-# ASSUME_UTF8 = 1
-# endif
 
 debug: $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client
 release: $(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client

@@ -8,16 +8,11 @@
 
 #include "../unicode/unihelpers.h"
 
-#define STATE(x)      s_##x :
-#define GOTOSTATE(x)  goto s_##x
-#define NEXTSTATE(POINTER)			\
-	goto *dtable[(uint8_t) *++(POINTER)];
-#define POINTEDSTATE(POINTER)			\
-	goto *dtable[(uint8_t) *(POINTER)]
+#define STEP(x) x :
 #define MOVEBY(POINTER, TYPE, AMOUNT)				\
-	POINTER = ((char *) (((TYPE *) POINTER) + (AMOUNT)))
+	(POINTER = ((char *) (((TYPE *) POINTER) + (AMOUNT))))
 #define COPY(VARIABLE, POINTER)		\
-	VARIABLE = *((typeof(VARIABLE) *) POINTER)
+	(VARIABLE = *((typeof(VARIABLE) *) POINTER))
 #define POPSET(VARIABLE, POINTER)			\
 	do {						\
 		COPY(VARIABLE, POINTER);		\
@@ -26,10 +21,10 @@
 
 #define POPSETSTRING(VARIABLE, SIZE, POINTER)				\
 	do {								\
-	        SIZE = u8_strlen((uint8_t *) POINTER) + 1;		\
+		SIZE = u8_strlen((uint8_t *) POINTER) + 1;		\
 		VARIABLE = malloc(SIZE);				\
 		u8_strcpy(VARIABLE, (uint8_t *) POINTER);		\
-	        POINTER += SIZE;					\
+		POINTER += SIZE;					\
 	} while (0)
 #define POP(TYPE, POINTER)						\
 	({								\
@@ -60,84 +55,95 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		     const char *out_name)
 {
 	static const void *restrict const dtable[] = {
-		[NTWT_OP_READ]        = &&s_read,
-		[NTWT_OP_END]         = &&s_end,
-		[NTWT_OP_CONTEXT]     = &&s_context,
-		[NTWT_OP_TEST]        = &&s_test,
-		[NTWT_OP_ECHO]        = &&s_echo,
-		[NTWT_OP_AWAKE]       = &&s_awake,
-		[NTWT_OP_INIT_PRAC]   = &&s_init_prac,
-		[NTWT_OP_LOAD_PRAC]   = &&s_load_prac,
-		[NTWT_OP_ACTION]      = &&s_action,
-		[NTWT_OP_CAN_HAPPEN]  = &&s_can_happen,
-		[NTWT_OP_STRENGTH]    = &&s_strength,
-		[NTWT_OP_UNSATISFIED] = &&s_unsatisfied,
-		[NTWT_OP_RUN]         = &&s_run,
-		[NTWT_OP_STRONGER]    = &&s_stronger,
-		[NTWT_OP_SAVE]        = &&s_save,
-		[NTWT_OP_INIT_PACK]   = &&s_init_pack,
-		[NTWT_OP_LOAD_PACK]   = &&s_load_pack,
-		[NTWT_OP_LOAD_ACTION] = &&s_load_action
+		[NTWT_OP_READ]        = &&read,
+		[NTWT_OP_END]         = &&end,
+		[NTWT_OP_CONTEXT]     = &&context,
+		[NTWT_OP_TEST]        = &&test,
+		[NTWT_OP_ECHO]        = &&echo,
+		[NTWT_OP_AWAKE]       = &&awake,
+		[NTWT_OP_INIT_PRAC]   = &&init_prac,
+		[NTWT_OP_LOAD_PRAC]   = &&load_prac,
+		[NTWT_OP_ACTION]      = &&action,
+		[NTWT_OP_CAN_HAPPEN]  = &&can_happen,
+		[NTWT_OP_STRENGTH]    = &&strength,
+		[NTWT_OP_UNSATISFIED] = &&unsatisfied,
+		[NTWT_OP_RUN]         = &&run,
+		[NTWT_OP_STRONGER]    = &&stronger,
+		[NTWT_OP_SAVE]        = &&save,
+		[NTWT_OP_INIT_PACK]   = &&init_pack,
+		[NTWT_OP_LOAD_PACK]   = &&load_pack,
+		[NTWT_OP_LOAD_ACTION] = &&load_action
 	};
+
+	inline void next_step(void)
+	{
+		goto *dtable[(uint8_t) *++exec_ptr];
+	}
+
+	inline void pointed_step(void)
+	{
+		goto *dtable[(uint8_t) *exec_ptr];
+	}
 
 	goto *dtable[(uint8_t) *exec_ptr];
 
-	STATE (read) {
+	STEP (read) {
 		printf("This should never be read!\n");
-		NEXTSTATE(exec_ptr);
+		goto *dtable[(uint8_t) *++exec_ptr];
+		next_step();
 	}
 
-	STATE (end) {
+	STEP (end) {
 		return;
 	}
 
-	STATE (context) {
+	STEP (context) {
 		++exec_ptr;
 		state->context = state->practises + *exec_ptr;
-		NEXTSTATE(exec_ptr);
+		next_step();
 	}
 
-	STATE (test) {
+	STEP (test) {
 		printf("this is a test\n");
-		NEXTSTATE(exec_ptr);
+		next_step();
 	}
 
 #if ASSUME_UTF8
-	STATE(echo) {
+	STEP (echo) {
 		++exec_ptr;
 		printf("%s\n", exec_ptr);
 		exec_ptr += u8_strlen((uint8_t *) exec_ptr) + 1;
-		POINTEDSTATE(exec_ptr);
+		pointed_step();
 	}
 #else
-	STATE (echo) {
+	STEP (echo) {
 		char *io;
 
 		++exec_ptr;
 		printf("%s\n", io = u8_strconv_to_locale((uint8_t *) exec_ptr));
 		free(io);
 		exec_ptr += u8_strlen((uint8_t *) exec_ptr) + 1;
-		POINTEDSTATE(exec_ptr);
+		pointed_step();
 	}
 #warning "Less efficient if your locale is utf8."
 #endif
 
-	STATE (awake) {
+	STEP (awake) {
 		pthread_create(&state->awareness, NULL,
 			       threaded_awareness_run, NULL);
-		NEXTSTATE(exec_ptr);
+		next_step();
 	}
 
-	STATE (init_prac) {
+	STEP (init_prac) {
 		++exec_ptr;
 		POPSET(state->practise_max, exec_ptr);
 
 		state->practises = calloc(state->practise_max,
 					 sizeof(*state->practises));
-		POINTEDSTATE(exec_ptr);
+		pointed_step();
 	}
 
-	STATE (load_prac) {
+	STEP (load_prac) {
 		uint32_t prac_id;
 		uint32_t pkg_pos;
 		uint32_t action_id;
@@ -158,10 +164,10 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		action = (state->packages + pkg_pos)->actions + action_id;
 		ntwt_practise_load(prac, action, can_happen,
 				   strength, unsatisfied);
-		POINTEDSTATE(exec_ptr);
+		pointed_step();
 	}
 
-	STATE (action) {
+	STEP (action) {
 		uint32_t pkg_pos;
 		uint32_t id;
 
@@ -170,46 +176,47 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		POPSET(id, exec_ptr);
 		state->context->action =
 			(state->packages + pkg_pos)->actions + id;
-		POINTEDSTATE(exec_ptr);
+		pointed_step();
 	}
 
 
-	STATE (can_happen) {
+	STEP (can_happen) {
 		++exec_ptr;
 		ntwt_practise_can_happen(state->context, POP(double, exec_ptr));
-		POINTEDSTATE(exec_ptr);
+		pointed_step();
 	}
 
-	STATE (strength) {
+	STEP (strength) {
 		++exec_ptr;
 		ntwt_practise_strength(state->context, POP(double, exec_ptr));
-		POINTEDSTATE(exec_ptr);
+		pointed_step();
 	}
 
-	STATE (unsatisfied) {
+	STEP (unsatisfied) {
 		++exec_ptr;
-		ntwt_practise_unsatisfied(state->context, POP(double, exec_ptr));
-		POINTEDSTATE(exec_ptr);
+		ntwt_practise_unsatisfied(state->context,
+					  POP(double, exec_ptr));
+		pointed_step();
 	}
 
-	STATE (run) {
+	STEP (run) {
 		pthread_create(&state->context->thread,
 			       NULL, threaded_practise_run,
 			       (void *) state->context);
-		NEXTSTATE(exec_ptr);
+		next_step();
 	}
 
-	STATE (stronger) {
+	STEP (stronger) {
 		ntwt_practise_stronger(state->context, 0.1);
-		NEXTSTATE(exec_ptr);
+		next_step();
 	}
 
-	STATE (save) {
+	STEP (save) {
 		ntwt_vm_save(state, out_name);
-		NEXTSTATE(exec_ptr);
+		next_step();
 	}
 
-	STATE (init_pack) {
+	STEP (init_pack) {
 		++exec_ptr;
 		POPSET(state->package_max, exec_ptr);
 		++state->package_max;
@@ -218,10 +225,10 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 			 sizeof(*state->packages));
 		*state->packages = ntwt_std_package;
 		state->package_ptr = 1;
-		POINTEDSTATE(exec_ptr);
+		pointed_step();
 	}
 
-	STATE (load_pack) {
+	STEP (load_pack) {
 		uint32_t pkg_num;
 		uint32_t action_max;
 		uint8_t *path;
@@ -232,10 +239,10 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		POPSET(action_max, exec_ptr);
 		POPSETSTRING(path, path_size, exec_ptr);
 		ntwt_vm_state_load_package(state, pkg_num, action_max, path);
-		POINTEDSTATE(exec_ptr);
+		pointed_step();
 	}
 
-	STATE (load_action) {
+	STEP (load_action) {
 		uint32_t pkg_num;
 		uint32_t id;
 		uint8_t *name;
@@ -246,6 +253,6 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		POPSET(id, exec_ptr);
 		POPSETSTRING(name, name_size, exec_ptr);
 		ntwt_package_load_action(state->packages + pkg_num, id, name);
-		POINTEDSTATE(exec_ptr);
+		pointed_step();
 	}
 }

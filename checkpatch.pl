@@ -3736,7 +3736,10 @@ sub process {
 			my $ctx = "$ctx_before$name";
 
 			# Ignore those directives where spaces _are_ permitted.
+			# Note: port this stuff to a perl6 module & make this
+			# extendable.
 			if ($name =~ /^(?:
+				STEP|
 				if|for|while|switch|return|case|
 				volatile|__volatile__|
 				__attribute__|format|__extension__|
@@ -4600,10 +4603,10 @@ sub process {
 				if ($dstat =~ /;/) {
 					ERROR("MULTISTATEMENT_MACRO_USE_DO_WHILE",
 					      "Macros with multiple statements should be enclosed in a do - while loop\n" . "$herectx");
-				} else {
-					ERROR("COMPLEX_MACRO",
-					      "Macros with complex values should be enclosed in parentheses\n" . "$herectx");
-				}
+				} # else {
+				# 	ERROR("COMPLEX_MACRO",
+				# 	      "Macros with complex values should be enclosed in parentheses\n" . "$herectx");
+				# }
 			}
 
 # check for macros with flow control, but without ## concatenation
