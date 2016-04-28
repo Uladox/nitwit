@@ -1,74 +1,73 @@
-CONFIG_FILE = config
-CONFIG_COMP = `cat $(CONFIG_FILE)`
+CONFIG_FILE := config
+CONFIG_COMP := $(shell cat "$(CONFIG_FILE)")
 
-SRC_FILES = \
-	server/server.c \
-	server/server_args.c \
+SRC_FILES := \
 	client/client.c \
 	client/client_io.c \
-	shared/socket/socket.c \
-	shared/practise/practise.c \
-	shared/vm/vm.c \
-	shared/vm/state.c \
-	shared/vm/vm_data.c \
+	gen/output/op_map.c \
+	server/server.c \
+	server/server_args.c \
 	shared/asm/compiler.c \
 	shared/asm/lex.c \
+	shared/hash/hashmap.c \
+	shared/hash/murmur.c \
+	shared/socket/socket.c \
 	shared/unicode/unihelpers.c \
-	shared/hashmap/hashmap.c \
-	gen/output/op_map.c
+	shared/vm/plugin.c \
+	shared/vm/state.c \
+	shared/vm/vm.c \
+	shared/vm/vm_data.c
 
 
-DEBUG_PATH = bin/debug
-DEBUG_FILES = $(patsubst %,$(DEBUG_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
+DEBUG_PATH := bin/debug
+DEBUG_FILES := $(patsubst %,$(DEBUG_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
 
-RELEASE_PATH = bin/release
-RELEASE_FILES = $(patsubst %,$(RELEASE_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
+RELEASE_PATH := bin/release
+RELEASE_FILES := $(patsubst %,$(RELEASE_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
 
-SERVER_FILES = \
+SERVER_FILES := \
 	server.o \
 	server_args.o \
 	socket.o \
-	vm.o \
 	state.o \
-	practise.o
+	vm.o \
+	plugin.o
 
-CLIENT_FILES = \
+CLIENT_FILES := \
 	client.o \
 	client_io.o \
-	socket.o \
 	compiler.o \
-	lex.o \
-	vm_data.o \
-	unihelpers.o \
 	hashmap.o \
-	op_map.o
+	lex.o \
+	murmur.o \
+	op_map.o \
+	socket.o \
+	unihelpers.o \
+	vm_data.o
 
-server.o = \
+server.o := \
 	shared/socket/socket.h \
 	shared/vm/vm.h
 
-client.o = \
+client.o := \
 	client/client_io.h \
-	shared/socket/socket.h \
-	shared/vm/vm.h \
 	shared/asm/compiler.h \
-	shared/unicode/unihelpers.h
-
-op_map = \
-	gen/programs/bin/map_gen \
-	gen/output/op_map.h \
-	gen/input/op_map_opener.c \
-	gen/input/op_map_closer.c \
-
-map_gen = \
-	gen/programs/map_gen.c \
-	shared/hashmap/hashmap.h \
-	shared/hashmap/hashmap.c \
+	shared/socket/socket.h \
+	shared/unicode/unihelpers.h \
 	shared/vm/vm.h
 
-# ifndef ASSUME_UTF8
-# ASSUME_UTF8 = 1
-# endif
+op_map := \
+	gen/input/op_map_closer.c \
+	gen/input/op_map_opener.c \
+	gen/output/op_map.h \
+	gen/programs/bin/map_gen
+
+map_gen := \
+	gen/programs/map_gen.c \
+	shared/hash/hashmap.c \
+	shared/hash/hashmap.h \
+	shared/hash/murmur.c \
+	shared/vm/vm.h
 
 debug: $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client
 release: $(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client
@@ -79,7 +78,7 @@ gen/output/op_map.c: $(op_map)
 
 gen/programs/bin/map_gen: $(map_gen)
 	gcc -o gen/programs/bin/map_gen gen/programs/map_gen.c \
-	shared/hashmap/hashmap.c -lunistring
+	shared/hash/hashmap.c shared/hash/murmur.c -lunistring
 
 define make-execs
 $(DEBUG_PATH)/$(1): $(addprefix $(DEBUG_PATH)/,$(3))
@@ -110,4 +109,5 @@ $(foreach src,$(SRC_FILES),$(eval $(call make-objs,$(src), \
 clean:
 	rm -f $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client \
 	$(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client \
-	$(DEBUG_PATH)/*.o $(RELEASE_PATH)/*.o gen/output/op_map.c
+	$(DEBUG_PATH)/*.o $(RELEASE_PATH)/*.o gen/output/op_map.c \
+	gen/programs/map_gen

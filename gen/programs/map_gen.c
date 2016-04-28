@@ -3,7 +3,7 @@
 #include <inttypes.h>
 
 #define NTWT_SHORT_NAMES
-#include "../../shared/hashmap/hashmap.h"
+#include "../../shared/hash/hashmap.h"
 #include "../../shared/vm/vm.h"
 
 #define MAP_ADD_OP(MAP, KEY, STORAGE)					\
