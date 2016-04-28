@@ -10,7 +10,6 @@ SRC_FILES := \
 	shared/asm/compiler.c \
 	shared/asm/lex.c \
 	shared/hash/hashmap.c \
-	shared/hash/murmur.c \
 	shared/socket/socket.c \
 	shared/unicode/unihelpers.c \
 	shared/vm/plugin.c \
@@ -39,7 +38,6 @@ CLIENT_FILES := \
 	compiler.o \
 	hashmap.o \
 	lex.o \
-	murmur.o \
 	op_map.o \
 	socket.o \
 	unihelpers.o \
@@ -66,7 +64,6 @@ map_gen := \
 	gen/programs/map_gen.c \
 	shared/hash/hashmap.c \
 	shared/hash/hashmap.h \
-	shared/hash/murmur.c \
 	shared/vm/vm.h
 
 debug: $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client
@@ -78,7 +75,7 @@ gen/output/op_map.c: $(op_map)
 
 gen/programs/bin/map_gen: $(map_gen)
 	gcc -o gen/programs/bin/map_gen gen/programs/map_gen.c \
-	shared/hash/hashmap.c shared/hash/murmur.c -lunistring
+	shared/hash/hashmap.c -lunistring
 
 define make-execs
 $(DEBUG_PATH)/$(1): $(addprefix $(DEBUG_PATH)/,$(3))
