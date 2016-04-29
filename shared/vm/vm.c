@@ -1,12 +1,13 @@
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <unistr.h>
 #include <uniconv.h>
-
-#include "vm.h"
+#include <unistd.h>
+#include <unistr.h>
 
 #include "../unicode/unihelpers.h"
+#include "plugin.h"
+#include "vm.h"
+
 
 #define STEP(x) x :
 #define MOVEBY(POINTER, TYPE, AMOUNT)				\
@@ -21,8 +22,8 @@
 
 #define POPSETSTRING(VARIABLE, SIZE, POINTER)				\
 	do {								\
-		SIZE = u8_strlen((uint8_t *) POINTER) + 1;		\
-		VARIABLE = malloc(SIZE);				\
+		SIZE = u8_strlen((uint8_t *) POINTER);			\
+		VARIABLE = malloc(SIZE + 1);				\
 		u8_strcpy(VARIABLE, (uint8_t *) POINTER);		\
 		POINTER += SIZE;					\
 	} while (0)
@@ -43,7 +44,8 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		[NTWT_OP_END]         = &&end,
 		[NTWT_OP_TEST]        = &&test,
 		[NTWT_OP_ECHO]        = &&echo,
-		[NTWT_OP_SAVE]        = &&save,
+		[NTWT_OP_EXEC]        = &&exec,
+		[NTWT_OP_SAVE]        = &&save
 	};
 
 #define next_step() goto *dtable[(uint8_t) *++exec_ptr]
@@ -84,6 +86,16 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 	}
 #warning "Less efficient if your locale is utf8."
 #endif
+
+	STEP (exec) {
+		uint8_t *str;
+		size_t size;
+
+		++exec_ptr;
+		POPSETSTRING(str, size, exec_ptr);
+		start_plugin((char *) str);
+		next_step();
+	}
 
 	STEP (save) {
 		ntwt_vm_save(state, out_name);

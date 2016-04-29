@@ -1,6 +1,6 @@
+#include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <dlfcn.h>
 #include <unistr.h>
 
 #include "state.h"

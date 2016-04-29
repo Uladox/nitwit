@@ -2,6 +2,7 @@
 #include <sched.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+#include <stdio.h>
 
 #define xstr(s) str(s)
 #define str(s) #s
@@ -22,22 +23,24 @@ static int load_plugin(void *arg)
 	void *handle = dlopen(p->name, RTLD_LAZY);
 
 	dlerror();
+
 	m = dlsym(handle, "main");
 	m(p->argc, p->argv);
+	printf("got here\n");
 	dlclose(handle);
 
-	int i = 0;
+	/* int i = 0; */
 
-	for(; i != p->argc; ++i)
-		free(p->argv[0]);
-	free(p->argv);
-	free(p->name);
-	free(p);
+	/* for(; i != p->argc; ++i) */
+	/* 	free(p->argv[0]); */
+	/* free(p->argv); */
+	/* free(p->name); */
+	/* free(p); */
 	/* free(stack); */
-	asm("movl $" xstr(SYS_exit) ", %eax\n"
-	    "syscall");
+	/* asm("movl $" xstr(SYS_exit) ", %eax\n" */
+	/*     "syscall"); */
 	/* Should not be reached since an exit call is made */
-	return 1;
+	return 0;
 }
 
 void start_plugin(char *name)
@@ -51,5 +54,5 @@ void start_plugin(char *name)
 	p->stack = stack;
 
         clone(load_plugin, stack + STACK_SIZE,
-	      CLONE_VM | CLONE_IO, p);
+	      CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_IO, p);
 }

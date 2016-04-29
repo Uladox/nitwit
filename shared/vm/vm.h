@@ -11,6 +11,7 @@ enum ntwt_op_code {
 /* IO operations */
 	NTWT_OP_TEST,
 	NTWT_OP_ECHO,
+	NTWT_OP_EXEC,
 /* Writing operations */
 	NTWT_OP_SAVE
 };

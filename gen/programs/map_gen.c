@@ -84,6 +84,9 @@ int main(int argc, char **args)
 	MAP_ADD_OP(map, u8"TEST", NTWT_OP_TEST);
 	MAP_ADD_OP(map, u8"END", NTWT_OP_END);
 	MAP_ADD_OP(map, u8"ECHO", NTWT_OP_ECHO);
+	MAP_ADD_OP(map, u8"EXEC", NTWT_OP_EXEC);
+	MAP_ADD_OP(map, u8"SAVE", NTWT_OP_SAVE);
+
 	map_write(map, output);
 	fprintf(output, "\n#include \"../input/op_map_closer.c\"\n");
 
