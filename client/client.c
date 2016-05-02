@@ -1,15 +1,22 @@
+#include <errno.h>
+#include <locale.h>
+#include <pthread.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
-#include <sys/types.h>
+#include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/un.h>
-#include <unistd.h>
-#include <locale.h>
 #include <uniconv.h>
+#include <unistd.h>
 
 #define NTWT_SHORT_NAMES
+#include "../shared/socket/socket.h"
+#include "../shared/vm/state.h"
+#include "../shared/vm/vm.h"
+#include "../shared/asm/compiler.h"
 #include "client_io.h"
 
 int main(void)

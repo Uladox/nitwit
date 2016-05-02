@@ -1,5 +1,5 @@
-#include <stdlib.h>
 #include <argp.h>
+#include <stdlib.h>
 
 #include "server_args.h"
 

@@ -1,3 +1,5 @@
+#include "state.h"
+#include "vm.h"
 #include "vm_data.h"
 
 const char *restrict const ntwt_type_name[] = {

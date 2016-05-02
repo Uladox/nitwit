@@ -16,7 +16,8 @@ struct plugin {
 	void *stack;
 };
 
-static int load_plugin(void *arg)
+static int
+load_plugin(void *arg)
 {
 	struct plugin *p = arg;
 	int (*m)(int, char**);
@@ -43,7 +44,8 @@ static int load_plugin(void *arg)
 	return 0;
 }
 
-void start_plugin(char *name)
+void
+start_plugin(char *name)
 {
 	char *stack = malloc(STACK_SIZE);
 	struct plugin *p = malloc(sizeof(*p));
@@ -54,5 +56,6 @@ void start_plugin(char *name)
 	p->stack = stack;
 
         clone(load_plugin, stack + STACK_SIZE,
-	      CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_IO, p);
+	      CLONE_FILES | CLONE_VM |
+	      CLONE_IO | CLONE_SYSVSEM, p);
 }

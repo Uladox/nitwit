@@ -1,16 +1,10 @@
-#ifndef NTWT_SOCKET_H
-#define NTWT_SOCKET_H
-
-#include <stdint.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <pthread.h>
-
+/* Include these
+ * #include <pthread.h>
+ * #include <stdint.h>
+ * #include <sys/select.h>
+ * #include <sys/socket.h>
+ * #include <sys/un.h>
+ */
 
 struct ntwt_connecter {
 	struct sockaddr_un socket;
@@ -65,6 +59,4 @@ void ntwt_connection_send(struct ntwt_connection *cntn,
 #define connection_kill(...) ntwt_connection_kill(__VA_ARGS__)
 #define connection_read(...) ntwt_connection_read(__VA_ARGS__)
 #define connection_send(...) ntwt_connection_send(__VA_ARGS__)
-#endif
-
 #endif

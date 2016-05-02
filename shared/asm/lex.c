@@ -1,15 +1,19 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <ctype.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistr.h>
 
 #define NTWT_SHORT_NAMES
+#include "../macros.h"
+#include "../vm/state.h"
+#include "../vm/vm.h"
+#include "../vm/vm_data.h"
 #include "lex_info.h"
 #include "lex.h"
-#include "../nitwit_macros.h"
 
-static void lex_string(struct ntwt_asm_lex_info *info,
-		       const uint8_t *current)
+static void
+lex_string(struct ntwt_asm_lex_info *info, const uint8_t *current)
 {
 	int backslashed = 0;
 
@@ -44,8 +48,8 @@ static void lex_string(struct ntwt_asm_lex_info *info,
 	}
 }
 
-static void lex_num(struct ntwt_asm_lex_info *info,
-		    const uint8_t *current)
+static void
+lex_num(struct ntwt_asm_lex_info *info, const uint8_t *current)
 {
 	enum ntwt_token num_type = NTWT_UINT;
 	int period = 0;
@@ -96,8 +100,8 @@ static void lex_num(struct ntwt_asm_lex_info *info,
 	}
 }
 
-static void lex_op_code(struct ntwt_asm_lex_info *info,
-			const uint8_t *current)
+static void
+lex_op_code(struct ntwt_asm_lex_info *info, const uint8_t *current)
 {
 	while (!isspace(*current) && *current != ';' && *current != '\0') {
 		++current;
@@ -113,7 +117,8 @@ static void lex_op_code(struct ntwt_asm_lex_info *info,
 	info->token = NTWT_OP_CODE;
 }
 
-void ntwt_asm_lex(struct ntwt_asm_lex_info *info)
+void
+ntwt_asm_lex(struct ntwt_asm_lex_info *info)
 {
 	const uint8_t *current = info->lexme;
 	ucs4_t puc;

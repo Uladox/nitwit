@@ -1,19 +1,24 @@
-#include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistr.h>
 
 #define NTWT_SHORT_NAMES
+#include "../hash/hashmap.h"
+#include "../../gen/output/op_map.h"
+#include "../macros.h"
+#include "../vm/state.h"
+#include "../vm/vm.h"
+#include "../vm/vm_data.h"
 #include "compiler.h"
 #include "lex_info.h"
 #include "lex.h"
-#include "../vm/vm_data.h"
-#include "../nitwit_macros.h"
-#include "../../gen/output/op_map.h"
 
 #define lex(...) asm_lex(__VA_ARGS__)
 
-static struct ntwt_asm_expr *pop(struct ntwt_asm_expr **stack)
+static struct ntwt_asm_expr *
+pop(struct ntwt_asm_expr **stack)
 {
 	if (*stack) {
 		struct ntwt_asm_expr *tmp = *stack;
@@ -23,9 +28,10 @@ static struct ntwt_asm_expr *pop(struct ntwt_asm_expr **stack)
 	return malloc(sizeof(**stack));
 }
 
-static void term(struct ntwt_asm_lex_info *info,
-		 struct ntwt_asm_expr **stack,
-		 struct ntwt_asm_expr *cmd)
+static void
+term(struct ntwt_asm_lex_info *info,
+     struct ntwt_asm_expr **stack,
+     struct ntwt_asm_expr *cmd)
 {
 	struct ntwt_asm_expr *trm = pop(stack);
 
@@ -74,9 +80,10 @@ static void term(struct ntwt_asm_lex_info *info,
 	lex(info);
 }
 
-static void command(struct ntwt_asm_lex_info *info,
-		    struct ntwt_asm_expr **stack,
-		    struct ntwt_asm_program *program)
+static void
+command(struct ntwt_asm_lex_info *info,
+	struct ntwt_asm_expr **stack,
+	struct ntwt_asm_program *program)
 {
 	struct ntwt_asm_expr *cmd = pop(stack);
 
@@ -119,9 +126,10 @@ error:
 	asm_recycle(stack, cmd);
 }
 
-void asm_statements(struct ntwt_asm_program *program,
-		    struct ntwt_asm_expr **stack,
-		    const uint8_t *code, int *error)
+void
+asm_statements(struct ntwt_asm_program *program,
+	       struct ntwt_asm_expr **stack,
+	       const uint8_t *code, int *error)
 {
 	struct ntwt_asm_lex_info info = {
 		.lexme = code,
@@ -141,7 +149,8 @@ void asm_statements(struct ntwt_asm_program *program,
 		command(&info, stack, program);
 }
 
-static void asm_command_type_check(struct ntwt_asm_expr *command, int *error)
+static void
+asm_command_type_check(struct ntwt_asm_expr *command, int *error)
 {
 	struct ntwt_asm_expr *term = command->contents.list;
 	const unsigned int command_line = term->lineno;
@@ -179,8 +188,8 @@ static void asm_command_type_check(struct ntwt_asm_expr *command, int *error)
 	}
 }
 
-void asm_program_type_check(struct ntwt_asm_program *program,
-			    int *error)
+void
+asm_program_type_check(struct ntwt_asm_program *program, int *error)
 {
 	struct ntwt_asm_expr *command;
 
@@ -214,8 +223,8 @@ static void asm_term_bytecode(struct ntwt_asm_expr *term, char **code_ptr,
 	*code_ptr += term->size;
 }
 
-static void asm_command_bytecode(struct ntwt_asm_expr *command, char **code_ptr,
-				 int *error)
+static void
+asm_command_bytecode(struct ntwt_asm_expr *command, char **code_ptr, int *error)
 {
 	struct ntwt_asm_expr *term = command->contents.list;
 
@@ -223,9 +232,10 @@ static void asm_command_bytecode(struct ntwt_asm_expr *command, char **code_ptr,
 		asm_term_bytecode(term, code_ptr, error);
 }
 
-void asm_program_bytecode(struct ntwt_asm_program *program,
-			  char **code, size_t *old_size,
-			  unsigned int *message_size, int *error)
+void
+asm_program_bytecode(struct ntwt_asm_program *program,
+		     char **code, size_t *old_size,
+		     unsigned int *message_size, int *error)
 {
 	*message_size = program->size;
 	if (unlikely(program->size > *old_size)) {
@@ -242,7 +252,8 @@ void asm_program_bytecode(struct ntwt_asm_program *program,
 		asm_command_bytecode(command, &code_ptr, error);
 }
 
-void asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *expr)
+void
+asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *expr)
 {
 	while (expr) {
 		struct ntwt_asm_expr *tmp;
@@ -258,7 +269,8 @@ void asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *expr)
 	}
 }
 
-void asm_expr_free(struct ntwt_asm_expr *expr)
+void
+asm_expr_free(struct ntwt_asm_expr *expr)
 {
 	while (expr) {
 		struct ntwt_asm_expr *tmp;
@@ -273,7 +285,8 @@ void asm_expr_free(struct ntwt_asm_expr *expr)
 	}
 }
 
-void asm_stack_free(struct ntwt_asm_expr *stack)
+void
+asm_stack_free(struct ntwt_asm_expr *stack)
 {
 	while (stack) {
 		struct ntwt_asm_expr *tmp;

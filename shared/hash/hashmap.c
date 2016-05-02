@@ -14,9 +14,10 @@
  *    along with nitwit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #define NTWT_SHORT_NAMES
 #include "hashmap.h"

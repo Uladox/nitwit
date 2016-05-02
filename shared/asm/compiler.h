@@ -1,10 +1,8 @@
-#ifndef NTWT_ASM_COMPILER_H
-#define NTWT_ASM_COMPILER_H
-
-#include <stdlib.h>
-#include <stdint.h>
-
-#include "../vm/vm.h"
+/* Include these
+ * #include <stdint.h>
+ * #include "../shared/vm/state.h"
+ * #include "../shared/vm/vm.h"
+ */
 
 struct ntwt_asm_program {
 	unsigned int size;
@@ -50,6 +48,4 @@ void ntwt_asm_stack_free(struct ntwt_asm_expr *stack);
 #define asm_recycle(...) ntwt_asm_recycle(__VA_ARGS__)
 #define asm_expr_free(...) ntwt_asm_expr_free(__VA_ARGS__)
 #define asm_stack_free(...) ntwt_asm_stack_free(__VA_ARGS__)
-#endif
-
 #endif

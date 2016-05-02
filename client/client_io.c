@@ -1,9 +1,21 @@
+#include <pthread.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
 #define NTWT_SHORT_NAMES
-#include "client_io.h"
+#include "../shared/socket/socket.h"
+#include "../shared/vm/state.h"
+#include "../shared/vm/vm.h"
+#include "../shared/asm/compiler.h"
 #include "../shared/unicode/unihelpers.h"
+#include "client_io.h"
 
 
-#if ASSUME_UTF8
+#ifdef ASSUME_UTF8
 void compile_and_send(const char *charset, struct ntwt_connection *sock,
 		      struct ntwt_asm_program *program,
 		      struct ntwt_asm_expr **stack,

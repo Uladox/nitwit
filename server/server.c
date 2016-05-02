@@ -1,18 +1,27 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <locale.h>
+#include <pthread.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
 
 #define NTWT_SHORT_NAMES
 #include "../shared/socket/socket.h"
+#include "../shared/vm/state.h"
 #include "../shared/vm/vm.h"
 #include "server_args.h"
 
 #define IMAGE_OPEN_FAILURE						\
 	"Error: Failed to open image file, it should be in the current directory or the first command line argument. If it is the former, its name should be state.ilk. Errno: %d (%s)\n"
 
-void *repl_getline(void *input)
+void *
+repl_getline(void *input)
 {
 	struct ntwt_connection *sock = ((void **) input)[0];
 	struct ntwt_vm_state *state  = ((void **) input)[1];
@@ -34,8 +43,8 @@ void *repl_getline(void *input)
 	return NULL;
 }
 
-static void load_state(struct ntwt_vm_state *state, FILE *image,
-		       const char *out_name)
+static void
+load_state(struct ntwt_vm_state *state, FILE *image, const char *out_name)
 {
 	long image_size;
 	char *image_code;
@@ -50,7 +59,8 @@ static void load_state(struct ntwt_vm_state *state, FILE *image,
 	free(image_code);
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
 	setlocale(LC_ALL, "");
 

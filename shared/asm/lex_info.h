@@ -1,7 +1,9 @@
-#ifndef NTWT_LEX_INFO_H
-#define NTWT_LEX_INFO_H
-
-#include "../vm/vm_data.h"
+/* Include these
+ * #include <stdint.h>
+ * #include "../vm/state.h"
+ * #include "../vm/vm.h"
+ * #include "../vm/vm_data.h"
+ */
 
 struct ntwt_asm_lex_info {
 	const uint8_t *lexme;
@@ -17,4 +19,3 @@ struct ntwt_asm_lex_info {
 
 };
 
-#endif

@@ -1,7 +1,8 @@
-CONFIG_FILE := config
-CONFIG_COMP := $(shell cat "$(CONFIG_FILE)")
+include config.mk
 
-SRC_FILES := \
+all: debug
+
+SRC := \
 	client/client.c \
 	client/client_io.c \
 	gen/output/op_map.c \
@@ -19,10 +20,7 @@ SRC_FILES := \
 
 
 DEBUG_PATH := bin/debug
-DEBUG_FILES := $(patsubst %,$(DEBUG_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
-
 RELEASE_PATH := bin/release
-RELEASE_FILES := $(patsubst %,$(RELEASE_PATH)/%,$(notdir $(SRC_FILES:.c=.o)))
 
 SERVER_FILES := \
 	server.o \
@@ -43,11 +41,21 @@ CLIENT_FILES := \
 	unihelpers.o \
 	vm_data.o
 
-server.o := \
+GENERATED_FILES := \
+	$(DEBUG_PATH)/nitwit_server \
+	$(DEBUG_PATH)/nitwit_client \
+	$(RELEASE_PATH)/nitwit_server \
+	$(RELEASE_PATH)/nitwit_client \
+	$(DEBUG_PATH)/*.o \
+	$(RELEASE_PATH)/*.o \
+	gen/output/op_map.c \
+	gen/programs/map_gen
+
+server_deps := \
 	shared/socket/socket.h \
 	shared/vm/vm.h
 
-client.o := \
+client_deps := \
 	client/client_io.h \
 	shared/asm/compiler.h \
 	shared/socket/socket.h \
@@ -71,40 +79,45 @@ release: $(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client
 gen: gen/programs/bin/map_gen
 
 gen/output/op_map.c: $(op_map)
-	(cd "gen/output" && ../programs/bin/map_gen);
+	@(cd "gen/output" && ../programs/bin/map_gen);
 
 gen/programs/bin/map_gen: $(map_gen)
-	gcc -o gen/programs/bin/map_gen gen/programs/map_gen.c \
+	@gcc -o gen/programs/bin/map_gen gen/programs/map_gen.c \
 	shared/hash/hashmap.c -lunistring
 
+# Makes the executable programs (server and client)
 define make-execs
-$(DEBUG_PATH)/$(1): $(addprefix $(DEBUG_PATH)/,$(3))
-	gcc -std=gnu99 -g -Wall $(2) $$^ -o $$@ $(4)
-$(RELEASE_PATH)/$(1): $(addprefix $(RELEASE_PATH)/,$(3))
-	gcc -std=gnu99 -Ofast -Wall $(2) $$^ -o $$@ $(4)
+# 1 is the executable name
+# 2 is the .o files to build
+# 3 is the libraries to link with
+$(DEBUG_PATH)/$(1): $(addprefix $(DEBUG_PATH)/,$(2))
+	@$(CC)  $(DEBUG_CFLAGS) $$^ -o $$@ $(3)
+$(RELEASE_PATH)/$(1): $(addprefix $(RELEASE_PATH)/,$(2))
+	@$(CC)  $(RELEASE_CFLAGS) $$^ -o $$@ $(3)
 endef
 
-$(eval $(call make-execs,nitwit_server,, \
-	$(SERVER_FILES),-lunistring -pthread -ldl));
-$(eval $(call make-execs,nitwit_client,, \
-	$(CLIENT_FILES),-lunistring));
+$(eval $(call make-execs,nitwit_server, \
+	$(SERVER_FILES),$(SERVER_LIBS)));
+$(eval $(call make-execs,nitwit_client, \
+	$(CLIENT_FILES),$(CLIENT_LIBS)));
 
+# Makes the object files (.c -> .o)
 define make-objs
-$(eval x = $(patsubst %.c, %.o, $(notdir $(1))))
-$(patsubst %.c, $(DEBUG_PATH)/%.o, $(notdir $(1))): $(1) $($(x)) config \
+# 1 is the .c file
+# looks at deps if there are more
+$(eval x = $(patsubst %.c, %_deps, $(notdir $(1))))
+$(patsubst %.c, $(DEBUG_PATH)/%.o, $(notdir $(1))): $(1) $($(x)) \
+	$(wildcard $(patsubst %.c, %.h, $(1))) # header check
+	@$(CC) $(DEBUG_CFLAGS) -c $$< -o $$@
+$(patsubst %.c, $(RELEASE_PATH)/%.o, $(notdir $(1))): $(1) $($(x)) \
 	$(wildcard $(patsubst %.c, %.h, $(1)))
-	gcc -std=gnu99 -g -c -Wall $(2) $$< -o $$@
-$(patsubst %.c, $(RELEASE_PATH)/%.o, $(notdir $(1))): $(1) $($(x)) config \
-	$(wildcard $(patsubst %.c, %.h, $(1)))
-	gcc -std=gnu99 -Ofast -c -Wall $(2) $$< -o $$@
+	@$(CC) $(RELEASE_CFLAGS) -c $$< -o $$@
 endef
 
-$(foreach src,$(SRC_FILES),$(eval $(call make-objs,$(src), \
-	$(CONFIG_COMP))));
+$(foreach src,$(SRC),$(eval $(call make-objs,$(src))));
+
+# Removes the generated files, duh
+clean:
+	@rm -f $(GENERATED_FILES)
 
 .PHONY: clean
-clean:
-	rm -f $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client \
-	$(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client \
-	$(DEBUG_PATH)/*.o $(RELEASE_PATH)/*.o gen/output/op_map.c \
-	gen/programs/map_gen

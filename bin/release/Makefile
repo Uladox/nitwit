@@ -1,2 +1,5 @@
 all:
-	cd "../../" && make release
+	@cd "../../" && make -j release
+clean:
+	@cd "../../" && make clean
+.PHONY: clean

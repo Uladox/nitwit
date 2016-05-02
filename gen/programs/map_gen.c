@@ -1,16 +1,19 @@
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <unistr.h>
-#include <inttypes.h>
 
 #define NTWT_SHORT_NAMES
 #include "../../shared/hash/hashmap.h"
+#include "../../shared/vm/state.h"
 #include "../../shared/vm/vm.h"
 
 #define MAP_ADD_OP(MAP, KEY, STORAGE)					\
 	hashmap_add(MAP, KEY, sizeof(KEY) - 1, &(char){ STORAGE })	\
 
-static int compare(const void *entry_key, uint32_t entry_key_size,
-		   const void *key, uint32_t key_size)
+static int
+compare(const void *entry_key, uint32_t entry_key_size,
+	const void *key, uint32_t key_size)
 {
 	if (entry_key_size != key_size)
 		return 0;
@@ -18,11 +21,14 @@ static int compare(const void *entry_key, uint32_t entry_key_size,
 		return !u8_strncmp(key, entry_key, key_size);
 }
 
-static void free_contents(void *key, void *storage) {
+static void
+free_contents(void *key, void *storage)
+{
 
 }
 
-static void map_write(struct ntwt_hashmap *map, FILE *output)
+static void
+map_write(struct ntwt_hashmap *map, FILE *output)
 {
 	struct ntwt_hashbin *bin = map->bins;
 
@@ -63,7 +69,8 @@ static void map_write(struct ntwt_hashmap *map, FILE *output)
 	fprintf(output, "\n}\n");
 }
 
-int main(int argc, char **args)
+int
+main(int argc, char **args)
 {
 	remove("../output/op_map.c");
 
@@ -79,6 +86,8 @@ int main(int argc, char **args)
 		"#include <stdio.h>\n"
 		"#include <stdlib.h>\n"
 		"#include <unistr.h>\n"
+		"\n"
+		"#include \"../../shared/hash/hashmap.h\"\n"
 		"#include \"op_map.h\"\n"
 		"#include \"../input/op_map_opener.c\"\n");
 	MAP_ADD_OP(map, u8"TEST", NTWT_OP_TEST);

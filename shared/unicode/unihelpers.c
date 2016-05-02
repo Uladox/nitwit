@@ -1,8 +1,9 @@
+#include <locale.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <uniconv.h>
 #include <unistr.h>
-#include <stdio.h>
-#include <locale.h>
-#include <stdlib.h>
 
 #include "unihelpers.h"
 

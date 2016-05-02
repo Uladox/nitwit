@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <uniconv.h>
@@ -6,6 +7,7 @@
 
 #include "../unicode/unihelpers.h"
 #include "plugin.h"
+#include "state.h"
 #include "vm.h"
 
 
@@ -67,7 +69,7 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		next_step();
 	}
 
-#if ASSUME_UTF8
+#ifdef ASSUME_UTF8
 	STEP (echo) {
 		++exec_ptr;
 		printf("%s\n", exec_ptr);

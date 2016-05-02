@@ -1,9 +1,6 @@
-#ifndef NTWT_VM_H
-#define NTWT_VM_H
-
-#include <stdint.h>
-
-#include "state.h"
+/* Include these
+ * #include "state.h"
+ */
 
 enum ntwt_op_code {
 	NTWT_OP_READ,
@@ -31,4 +28,3 @@ enum ntwt_token {
 void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		     const char *restrict exec_ptr,
 		     const char *out_name);
-#endif

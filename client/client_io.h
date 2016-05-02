@@ -1,8 +1,9 @@
-#ifndef CLIENT_IO_H
-#define CLIENT_IO_H
-
-#include "../shared/socket/socket.h"
-#include "../shared/asm/compiler.h"
+/* Include these.
+ * #include "../shared/socket/socket.h"
+ * #include "../shared/vm/state.h"
+ * #include "../shared/vm/vm.h"
+ * #include "../shared/asm/compiler.h"
+ */
 
 void compile_and_send(const char *charset, struct ntwt_connection *sock,
 		      struct ntwt_asm_program *program,
@@ -13,5 +14,3 @@ void compile_and_send(const char *charset, struct ntwt_connection *sock,
 void prompt(void);
 
 void free_conversions(void);
-
-#endif

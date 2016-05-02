@@ -1,6 +1,19 @@
+#include <errno.h>
+#include <pthread.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <unistd.h>
+
 #include "socket.h"
 
-struct ntwt_connecter *ntwt_connecter_new(char *path)
+struct ntwt_connecter *
+ntwt_connecter_new(char *path)
 {
 	int len;
 	struct ntwt_connecter *cntr = malloc(sizeof(*cntr));
@@ -27,13 +40,15 @@ struct ntwt_connecter *ntwt_connecter_new(char *path)
 	return cntr;
 }
 
-void ntwt_connecter_free(struct ntwt_connecter *cntr)
+void
+ntwt_connecter_free(struct ntwt_connecter *cntr)
 {
 	close(cntr->sd);
 	free(cntr);
 }
 
-struct ntwt_connection *ntwt_connection_connect(char *path)
+struct ntwt_connection *
+ntwt_connection_connect(char *path)
 {
 	struct ntwt_connection *cntn = malloc(sizeof(*cntn));
 
@@ -64,7 +79,8 @@ struct ntwt_connection *ntwt_connection_connect(char *path)
 	return cntn;
 }
 
-struct ntwt_connection *ntwt_connecter_accept(struct ntwt_connecter *cntr)
+struct ntwt_connection *
+ntwt_connecter_accept(struct ntwt_connecter *cntr)
 {
 	struct ntwt_connection *cntn;
 
@@ -92,7 +108,8 @@ struct ntwt_connection *ntwt_connecter_accept(struct ntwt_connecter *cntr)
 	return cntn;
 }
 
-void ntwt_connection_free(struct ntwt_connection *cntn)
+void
+ntwt_connection_free(struct ntwt_connection *cntn)
 {
 	pthread_mutex_destroy(&cntn->end_mutex);
 	pthread_mutex_destroy(&cntn->done_mutex);
@@ -100,7 +117,8 @@ void ntwt_connection_free(struct ntwt_connection *cntn)
 	free(cntn);
 }
 
-int ntwt_connection_end_check(struct ntwt_connection *cntn)
+int
+ntwt_connection_end_check(struct ntwt_connection *cntn)
 {
 	int value;
 
@@ -110,14 +128,16 @@ int ntwt_connection_end_check(struct ntwt_connection *cntn)
 	return value;
 }
 
-void ntwt_connection_end_mutate(struct ntwt_connection *cntn, int value)
+void
+ntwt_connection_end_mutate(struct ntwt_connection *cntn, int value)
 {
 	pthread_mutex_lock(&cntn->end_mutex);
 	cntn->end_bool = value;
 	pthread_mutex_unlock(&cntn->end_mutex);
 }
 
-void ntwt_connection_kill(struct ntwt_connection *cntn)
+void
+ntwt_connection_kill(struct ntwt_connection *cntn)
 {
 	int true_val = 1;
 
@@ -128,9 +148,10 @@ void ntwt_connection_kill(struct ntwt_connection *cntn)
 	pthread_mutex_unlock(&cntn->done_mutex);
 }
 
-int ntwt_connection_read(struct ntwt_connection *cntn,
-			 char **str, uint32_t *old_size,
-			 int *msg_size, uint32_t offset)
+int
+ntwt_connection_read(struct ntwt_connection *cntn,
+		     char **str, uint32_t *old_size,
+		     int *msg_size, uint32_t offset)
 {
 	int retval;
 	uint32_t size = 0;
@@ -170,8 +191,9 @@ int ntwt_connection_read(struct ntwt_connection *cntn,
 	return retval;
 }
 
-void ntwt_connection_send(struct ntwt_connection *cntn,
-			  const void *msg, uint32_t msg_size)
+void
+ntwt_connection_send(struct ntwt_connection *cntn,
+		     const void *msg, uint32_t msg_size)
 {
 	if (!ntwt_connection_end_check(cntn))
 		if (send(cntn->sd, msg, msg_size, MSG_NOSIGNAL) < 0) {

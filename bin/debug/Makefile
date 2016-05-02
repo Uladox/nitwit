@@ -1,5 +1,5 @@
 all:
-	cd "../../" && make debug
-.PHONY: clean
+	@cd "../../" && make -j debug
 clean:
-	cd "../../" && make clean
+	@cd "../../" && make clean
+.PHONY: clean

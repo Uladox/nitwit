@@ -14,10 +14,9 @@
  *    along with nitwit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NTWT_HASHMAP_H
-#define NTWT_HASHMAP_H
-
-#include <stdint.h>
+/* Include these
+ * #include <stdint.h>
+ */
 
 enum { NTWT_HASHMAP_ALREADY_PRESENT, NTWT_HASHMAP_ADDED };
 
@@ -70,6 +69,4 @@ void *ntwt_hashmap_get(struct ntwt_hashmap *map,
 #define hashmap_add(...) ntwt_hashmap_add(__VA_ARGS__)
 #define hashmap_remove(...) ntwt_hashmap_remove(__VA_ARGS__)
 #define hashmap_get(...) ntwt_hashmap_get(__VA_ARGS__)
-#endif
-
 #endif
