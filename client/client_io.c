@@ -7,6 +7,7 @@
 #include <sys/un.h>
 
 #define NTWT_SHORT_NAMES
+#include "../shared/macros.h"
 #include "../shared/socket/socket.h"
 #include "../shared/vm/state.h"
 #include "../shared/vm/vm.h"

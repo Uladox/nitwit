@@ -58,8 +58,6 @@ lex_num(struct ntwt_asm_lex_info *info, const uint8_t *current)
 		++current;
 		--info->units;
 		switch (*current) {
-		case '0' ... '9':
-			continue;
 		case '\n':
 			++info->lineno;
 		case ' ':
@@ -90,6 +88,17 @@ lex_num(struct ntwt_asm_lex_info *info, const uint8_t *current)
 			info->lexlen = current - info->lexme;
 			info->token = num_type;
 			return;
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			continue;
 		default:
 			fprintf(stderr,
 				"Error: invalid char '%c' in number on line %u\n",
@@ -150,17 +159,30 @@ ntwt_asm_lex(struct ntwt_asm_lex_info *info)
 		++info->lexme;
 		lex_string(info, current);
 		break;
-	case '0' ... '9':
-		lex_num(info, current);
-		break;
 	case '*':
 		/* Assumes an op code after '*' */
 		++info->lexme;
 		lex_op_code(info, current);
 		break;
+#ifdef C99_COMPLIANT
+	case L'🐣':
+#else
 	case U'🐣':
+#endif
 		printf(u8"λ🐣!\n");
 		exit(0);
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		lex_num(info, current);
+		break;
 	default:
 		/* Assumes an  op code after ';' */
 		if (info->token != NTWT_SEMICOLON) {

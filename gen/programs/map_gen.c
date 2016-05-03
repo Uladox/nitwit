@@ -88,6 +88,7 @@ main(int argc, char **args)
 		"#include <unistr.h>\n"
 		"\n"
 		"#include \"../../shared/hash/hashmap.h\"\n"
+		"#include \"../../shared/macros.h\"\n"
 		"#include \"op_map.h\"\n"
 		"#include \"../input/op_map_opener.c\"\n");
 	MAP_ADD_OP(map, u8"TEST", NTWT_OP_TEST);

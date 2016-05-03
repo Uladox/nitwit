@@ -25,7 +25,8 @@ load_plugin(void *arg)
 
 	dlerror();
 
-	m = dlsym(handle, "main");
+	/* Workaround that keeps using dlsym c99 complient */
+	*(void **) &m = dlsym(handle, "main");
 	m(p->argc, p->argv);
 	printf("got here\n");
 	dlclose(handle);

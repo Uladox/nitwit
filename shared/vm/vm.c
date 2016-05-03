@@ -11,7 +11,6 @@
 #include "vm.h"
 
 
-#define STEP(x) x :
 #define MOVEBY(POINTER, TYPE, AMOUNT)				\
 	(POINTER = ((char *) (((TYPE *) POINTER) + (AMOUNT))))
 #define COPY(VARIABLE, POINTER)		\
@@ -41,43 +40,53 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		     const char *restrict exec_ptr,
 		     const char *out_name)
 {
+#ifdef C99_COMPLIANT
+#define next_step() ++exec_ptr; break
+#define STEP(x) case NTWT_OP_ ## x :
+#define BEGIN()					\
+	while (1) {				\
+		switch (*exec_ptr) {
+#define CONCLUDE() } }
+#else
 	static const void *restrict const dtable[] = {
-		[NTWT_OP_READ]        = &&read,
-		[NTWT_OP_END]         = &&end,
-		[NTWT_OP_TEST]        = &&test,
-		[NTWT_OP_ECHO]        = &&echo,
-		[NTWT_OP_EXEC]        = &&exec,
-		[NTWT_OP_SAVE]        = &&save
+		[NTWT_OP_READ]        = &&READ,
+		[NTWT_OP_END]         = &&END,
+		[NTWT_OP_TEST]        = &&TEST,
+		[NTWT_OP_ECHO]        = &&ECHO,
+		[NTWT_OP_EXEC]        = &&EXEC,
+		[NTWT_OP_SAVE]        = &&SAVE
 	};
 
 #define next_step() goto *dtable[(uint8_t) *++exec_ptr]
+#define STEP(x) x :
+#define BEGIN() goto *dtable[(uint8_t) *exec_ptr]
+#define CONCLUDE()
+#endif
 
-	goto *dtable[(uint8_t) *exec_ptr];
-
-	STEP (read) {
+	BEGIN();
+	STEP (READ) {
 		printf("This should never be read!\n");
-		goto *dtable[(uint8_t) *++exec_ptr];
 		next_step();
 	}
 
-	STEP (end) {
+	STEP (END) {
 		return;
 	}
 
-	STEP (test) {
+	STEP (TEST) {
 		printf("this is a test\n");
 		next_step();
 	}
 
 #ifdef ASSUME_UTF8
-	STEP (echo) {
+	STEP (ECHO) {
 		++exec_ptr;
 		printf("%s\n", exec_ptr);
 		exec_ptr += u8_strlen((uint8_t *) exec_ptr);
 		next_step();
 	}
 #else
-	STEP (echo) {
+	STEP (ECHO) {
 		char *io;
 
 		++exec_ptr;
@@ -89,7 +98,7 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 #warning "Less efficient if your locale is utf8."
 #endif
 
-	STEP (exec) {
+	STEP (EXEC) {
 		uint8_t *str;
 		size_t size;
 
@@ -99,9 +108,10 @@ void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		next_step();
 	}
 
-	STEP (save) {
+	STEP (SAVE) {
 		ntwt_vm_save(state, out_name);
 		next_step();
 	}
 
+	CONCLUDE();
 }
