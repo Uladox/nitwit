@@ -21,11 +21,9 @@
 	"Error: Failed to open image file, it should be in the current directory or the first command line argument. If it is the former, its name should be state.ilk. Errno: %d (%s)\n"
 
 void *
-repl_getline(void *input)
+repl_getline(struct ntwt_connection *sock, struct ntwt_vm_state *state,
+	     const char *output)
 {
-	struct ntwt_connection *sock = ((void **) input)[0];
-	struct ntwt_vm_state *state  = ((void **) input)[1];
-	const char *output = ((void **) input)[2];
 	unsigned int size = 256;
 	char *str = malloc(size);
 
@@ -64,7 +62,6 @@ main(int argc, char *argv[])
 {
 	setlocale(LC_ALL, "");
 
-	pthread_t user_thread;
 	struct ntwt_vm_state state;
 	struct ntwt_connecter *find_socket;
 	struct ntwt_connection *connect_socket;
@@ -91,10 +88,6 @@ main(int argc, char *argv[])
 	}
 	find_socket = connecter_new("echo_socket");
 	connect_socket = connecter_accept(find_socket);
-	pthread_create(&user_thread, NULL, repl_getline,
-		       &(void *[]) { connect_socket, &state, opts.output });
-	pthread_join(user_thread, NULL);
-	connecter_free(find_socket);
-	pthread_exit(NULL);
+	repl_getline(connect_socket, &state, opts.output);
 	return 0;
 }

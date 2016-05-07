@@ -36,18 +36,23 @@
 		temp;							\
 	})
 
-void ntwt_interprete(struct ntwt_vm_state *restrict state,
-		     const char *restrict exec_ptr,
-		     const char *out_name)
+void
+ntwt_interprete(struct ntwt_vm_state *restrict state,
+		const char *restrict exec_ptr,
+		const char *out_name)
 {
+
+/* If you look at this ifdef as a big block, it helps. */
 #ifdef C99_COMPLIANT
-#define next_step() ++exec_ptr; break
+	/* Uses while and switch for reading bytes */
+#define next_step() do { ++exec_ptr; goto begin; } while (0)
 #define STEP(x) case NTWT_OP_ ## x :
 #define BEGIN()					\
-	while (1) {				\
+	begin:					\
 		switch (*exec_ptr) {
-#define CONCLUDE() } }
+#define CONCLUDE() }
 #else
+	/* Uses non-standard gcc computed gotos */
 	static const void *restrict const dtable[] = {
 		[NTWT_OP_READ]        = &&READ,
 		[NTWT_OP_END]         = &&END,

@@ -37,7 +37,8 @@ static const int hashmap_primes[] = {
 static void rehash(struct ntwt_hashmap *map);
 
 #define ROT32(x, y) ((x << y) | (x >> (32 - y)))
-uint32_t murmur3_32(const char *key, uint32_t len, uint32_t seed)
+uint32_t
+murmur3_32(const char *key, uint32_t len, uint32_t seed)
 {
 	static const uint32_t c1 = 0xcc9e2d51;
 	static const uint32_t c2 = 0x1b873593;
@@ -90,9 +91,8 @@ uint32_t murmur3_32(const char *key, uint32_t len, uint32_t seed)
 	return hash;
 }
 
-static struct ntwt_hashentry *new_hashentry(void *key,
-					    uint32_t key_size,
-					    void *storage)
+static struct ntwt_hashentry *
+new_hashentry(void *key, uint32_t key_size, void *storage)
 {
 	struct ntwt_hashentry *entry = malloc(sizeof(*entry));
 
@@ -103,13 +103,11 @@ static struct ntwt_hashentry *new_hashentry(void *key,
 	return entry;
 }
 
-struct ntwt_hashmap *hashmap_new(unsigned int sequence,
-			    int (*compare)(const void *entry_key1,
-					   uint32_t entry_key1_size,
-					   const void *key2,
-					   uint32_t key2_size),
-			    void (*free_contents)(void *key,
-						  void *storage))
+struct ntwt_hashmap *
+hashmap_new(unsigned int sequence,
+	    int (*compare)(const void *entry_key1, uint32_t entry_key1_size,
+			   const void *key2, uint32_t key2_size),
+	    void (*free_contents)(void *key, void *storage))
 {
 	struct ntwt_hashmap *map = malloc(sizeof(*map));
 	struct ntwt_hashbin *bin;
@@ -131,7 +129,8 @@ struct ntwt_hashmap *hashmap_new(unsigned int sequence,
 	return map;
 }
 
-void hashmap_free(struct ntwt_hashmap *map)
+void
+hashmap_free(struct ntwt_hashmap *map)
 {
 	struct ntwt_hashbin *bin = map->bins;
 
@@ -152,9 +151,9 @@ void hashmap_free(struct ntwt_hashmap *map)
 	free(map);
 }
 
-int ntwt_hashmap_add(struct ntwt_hashmap *map,
-		     void *key, uint32_t key_size,
-		     void *storage)
+int
+ntwt_hashmap_add(struct ntwt_hashmap *map, void *key, uint32_t key_size,
+		 void *storage)
 {
 	struct ntwt_hashentry *entry;
 	unsigned int row;
@@ -186,8 +185,8 @@ int ntwt_hashmap_add(struct ntwt_hashmap *map,
 	return NTWT_HASHMAP_ADDED;
 }
 
-void hashmap_remove(struct ntwt_hashmap *map, void *key,
-		    uint32_t key_size)
+void
+hashmap_remove(struct ntwt_hashmap *map, void *key, uint32_t key_size)
 {
 	struct ntwt_hashentry *entry;
 	unsigned int row;
@@ -218,7 +217,8 @@ void hashmap_remove(struct ntwt_hashmap *map, void *key,
 	}
 }
 
-void *hashmap_get(struct ntwt_hashmap *map, const void *key, uint32_t key_size)
+void *
+hashmap_get(const struct ntwt_hashmap *map, const void *key, uint32_t key_size)
 {
 	struct ntwt_hashentry *entry;
 	unsigned int row;
@@ -234,7 +234,8 @@ void *hashmap_get(struct ntwt_hashmap *map, const void *key, uint32_t key_size)
 }
 
 /* Adds to a bin something already in the hashmap during a rehash */
-static void rehash_add(struct ntwt_hashbin *bin, struct ntwt_hashentry *entry)
+static void
+rehash_add(struct ntwt_hashbin *bin, struct ntwt_hashentry *entry)
 {
 	struct ntwt_hashentry *tmp = bin->first;
 
@@ -248,7 +249,8 @@ static void rehash_add(struct ntwt_hashbin *bin, struct ntwt_hashentry *entry)
 	tmp->next = entry;
 }
 
-static void rehash(struct ntwt_hashmap *map)
+static void
+rehash(struct ntwt_hashmap *map)
 {
 	struct ntwt_hashbin *bin = map->bins;
 	struct ntwt_hashbin *new_bins;

@@ -48,8 +48,7 @@ GENERATED_FILES := \
 	$(RELEASE_PATH)/nitwit_client \
 	$(DEBUG_PATH)/*.o \
 	$(RELEASE_PATH)/*.o \
-	gen/output/op_map.c \
-	gen/programs/map_gen
+	gen/output/op_map.c
 
 server_deps := \
 	shared/socket/socket.h \
@@ -63,27 +62,22 @@ client_deps := \
 	shared/vm/vm.h
 
 op_map := \
-	gen/input/op_map_closer.c \
-	gen/input/op_map_opener.c \
 	gen/output/op_map.h \
-	gen/programs/bin/map_gen
+	gen/programs/map_gen.c
 
-map_gen := \
-	gen/programs/map_gen.c \
-	shared/hash/hashmap.c \
-	shared/hash/hashmap.h \
-	shared/vm/vm.h
+# map_gen := \
+# 	gen/programs/map_gen.c \
+# 	shared/hash/hashmap.c \
+# 	shared/hash/hashmap.h \
+# 	shared/hash/maputils.c \
+# 	shared/hash/maputils.h \
+# 	shared/vm/vm.h
 
 debug: $(DEBUG_PATH)/nitwit_server $(DEBUG_PATH)/nitwit_client
 release: $(RELEASE_PATH)/nitwit_server $(RELEASE_PATH)/nitwit_client
-gen: gen/programs/bin/map_gen
 
 gen/output/op_map.c: $(op_map)
-	@(cd "gen/output" && ../programs/bin/map_gen);
-
-gen/programs/bin/map_gen: $(map_gen)
-	@gcc -o gen/programs/bin/map_gen gen/programs/map_gen.c \
-	shared/hash/hashmap.c -lunistring
+	@(cd "gen/output" && ../programs/map_gen.c);
 
 # Makes the executable programs (server and client)
 define make-execs

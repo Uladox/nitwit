@@ -7,8 +7,9 @@
 
 #include "unihelpers.h"
 
-void get_u8(const char *charset, const char *src, size_t src_size,
-	    uint8_t **result, size_t *result_size)
+void
+get_u8(const char *charset, const char *src, size_t src_size,
+       uint8_t **result, size_t *result_size)
 {
 	uint8_t *tmp_u8;
 	size_t tmp_size = *result_size;
@@ -22,8 +23,9 @@ void get_u8(const char *charset, const char *src, size_t src_size,
 	*result = tmp_u8;
 }
 
-void get_encoded(const char *charset, const uint8_t *src, size_t src_size,
-		 char **result, size_t *result_size)
+void
+get_encoded(const char *charset, const uint8_t *src, size_t src_size,
+	    char **result, size_t *result_size)
 {
 	char *tmp_encoded;
 	size_t tmp_size = *result_size;

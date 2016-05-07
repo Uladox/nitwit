@@ -59,7 +59,7 @@ void ntwt_hashmap_remove(struct ntwt_hashmap *map,
 			 void *key,
 			 uint32_t key_size);
 
-void *ntwt_hashmap_get(struct ntwt_hashmap *map,
+void *ntwt_hashmap_get(const struct ntwt_hashmap *map,
 		       const void *key,
 		       uint32_t key_size);
 

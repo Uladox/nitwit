@@ -12,3 +12,9 @@
 Nitwit is a machine, a machine of the esoteric language variety, a machine dealing not with problems that actually exist, but the solutions to ones that don't, a machine not only of intellect, though that is important, but of what it means to mean, a machine of the struggle between the "down to earth" and the great, grand, profound "head in the clouds."
 
 Mostly it's just a project for putting the strange questions in life into a computer.
+
+
+Dependencies:
+  * libunistring
+  * pthread
+  * [c "scripting"](https://github.com/ryanmjacobs/c)
