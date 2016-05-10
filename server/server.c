@@ -28,11 +28,15 @@
 void
 free_finished_plugins(struct thread_pass *pass)
 {
-	struct ntwt_plugin *plugin = *(struct ntwt_plugin **) pass->data;
-	thread_pass_continue(pass);
-	pthread_join(plugin->thread, NULL);
-	free(plugin->name);
-	free(plugin);
+	while (thread_pass_work(pass)) {
+		struct ntwt_plugin *plugin =
+			*(struct ntwt_plugin **) pass->data;
+
+		thread_pass_continue(pass);
+		pthread_join(plugin->thread, NULL);
+		free(plugin->name);
+		free(plugin);
+	}
 }
 
 void
@@ -49,9 +53,7 @@ server_loop(struct ntwt_connection *sock, struct ntwt_vm_state *state,
 			str[msg_size] = NTWT_OP_END;
 			ntwt_interprete(state, pass, str, output);
 		}
-
-		if (thread_pass_work(pass))
-			free_finished_plugins(pass);
+		free_finished_plugins(pass);
 	}
 
 	free(str);

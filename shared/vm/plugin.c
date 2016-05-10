@@ -12,7 +12,11 @@
 
 #define xstr(s) str(s)
 #define str(s) #s
-/* #define SYS_exit 60 */
+
+/* 1/64 of a megabyte. Typical threads tend to be two megabytes.
+ * For small parts that only do one thing, this should be about
+ * enough.
+ */
 #define STACK_SIZE 15625
 
 static void *
