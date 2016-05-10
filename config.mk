@@ -5,11 +5,12 @@
 # RELEASE_CFLAGS = -std=gnu99 -Ofast -Wall -DASSUME_UTF8
 DEBUG_CFLAGS = -std=c99 -pedantic -g -Wall -D_XOPEN_SOURCE=700 \
 	-DASSUME_UTF8 -DC99_COMPLIANT
+#-fno-omit-frame-pointer -fsanitize=thread
 RELEASE_CFLAGS = -std=c99 -pedantic -Ofast -Wall -D_XOPEN_SOURCE=700 \
 	-DASSUME_UTF8  -DC99_COMPLIANT
 
 # Libs
-SERVER_LIBS = -lunistring -pthread -ldl
+SERVER_LIBS = -lthreadpass -lunistring -pthread -ldl
 CLIENT_LIBS = -lunistring
 
 # compiler and linker

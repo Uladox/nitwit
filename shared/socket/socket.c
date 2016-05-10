@@ -65,7 +65,6 @@ ntwt_connection_connect(char *path)
 	cntn->len = strlen(path) + sizeof(cntn->socket.sun_family);
 
 	pthread_mutex_init(&cntn->end_mutex, NULL);
-	pthread_mutex_init(&cntn->done_mutex, NULL);
 
 	if (connect(cntn->sd, (struct sockaddr *)&cntn->socket,
 		    cntn->len) == -1) {
@@ -82,14 +81,12 @@ ntwt_connection_connect(char *path)
 struct ntwt_connection *
 ntwt_connecter_accept(struct ntwt_connecter *cntr)
 {
-	struct ntwt_connection *cntn;
+	struct ntwt_connection *cntn = malloc(sizeof(*cntn));
 
 	if (listen(cntr->sd, 5) == -1) {
 		perror("listen");
 		return NULL;
 	}
-
-	cntn = malloc(sizeof(*cntn));
 
 	cntn->len = sizeof(struct sockaddr);
 	cntn->sd = accept(cntr->sd,
@@ -102,7 +99,6 @@ ntwt_connecter_accept(struct ntwt_connecter *cntr)
 	}
 
 	pthread_mutex_init(&cntn->end_mutex, NULL);
-	pthread_mutex_init(&cntn->done_mutex, NULL);
 	cntn->end_bool = 0;
 
 	return cntn;
@@ -112,7 +108,6 @@ void
 ntwt_connection_free(struct ntwt_connection *cntn)
 {
 	pthread_mutex_destroy(&cntn->end_mutex);
-	pthread_mutex_destroy(&cntn->done_mutex);
 	close(cntn->sd);
 	free(cntn);
 }
@@ -141,11 +136,11 @@ ntwt_connection_kill(struct ntwt_connection *cntn)
 {
 	int true_val = 1;
 
-	pthread_mutex_lock(&cntn->done_mutex);
+	pthread_mutex_lock(&cntn->end_mutex);
 	ntwt_connection_end_mutate(cntn, 1);
 	setsockopt(cntn->sd, SOL_SOCKET, SO_REUSEADDR,
 		   &true_val, sizeof(int));
-	pthread_mutex_unlock(&cntn->done_mutex);
+	pthread_mutex_unlock(&cntn->end_mutex);
 }
 
 int
@@ -157,7 +152,7 @@ ntwt_connection_read(struct ntwt_connection *cntn,
 	uint32_t size = 0;
 	uint32_t offset_size = offset;
 
-	pthread_mutex_lock(&cntn->done_mutex);
+	pthread_mutex_lock(&cntn->end_mutex);
 
 	FD_ZERO(&cntn->set);
 	FD_SET(cntn->sd,
@@ -168,7 +163,6 @@ ntwt_connection_read(struct ntwt_connection *cntn,
 	retval = select(FD_SETSIZE, &cntn->set, NULL, NULL,
 			&cntn->timeout);
 	if (retval == 1) {
-
 		recv(cntn->sd, &size, sizeof(uint32_t), 0);
 		offset_size += size;
 
@@ -183,11 +177,11 @@ ntwt_connection_read(struct ntwt_connection *cntn,
 		if (*msg_size <= 0) {
 			if (*msg_size < 0)
 				perror("recv");
-			ntwt_connection_end_mutate(cntn, 1);
+			cntn->end_bool = 1;
 		}
 	}
 
-	pthread_mutex_unlock(&cntn->done_mutex);
+	pthread_mutex_unlock(&cntn->end_mutex);
 	return retval;
 }
 

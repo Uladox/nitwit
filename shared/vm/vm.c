@@ -38,6 +38,7 @@
 
 void
 ntwt_interprete(struct ntwt_vm_state *restrict state,
+		struct thread_pass *pass,
 		const char *restrict exec_ptr,
 		const char *out_name)
 {
@@ -109,7 +110,7 @@ ntwt_interprete(struct ntwt_vm_state *restrict state,
 
 		++exec_ptr;
 		POPSETSTRING(str, size, exec_ptr);
-		start_plugin((char *) str);
+		ntwt_plugin_start(pass, (char *) str);
 		next_step();
 	}
 

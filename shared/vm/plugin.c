@@ -1,62 +1,59 @@
 #define _GNU_SOURCE
-#include <sched.h>
-#include <stdlib.h>
 #include <dlfcn.h>
+#include <pthread.h>
+#include <sched.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include <threadpass.h>
+
+#include "plugin.h"
 
 #define xstr(s) str(s)
 #define str(s) #s
-#define SYS_exit 60
+/* #define SYS_exit 60 */
 #define STACK_SIZE 15625
 
-struct plugin {
-	char *name;
-	int argc;
-	char **argv;
-	void *stack;
-};
-
-static int
-load_plugin(void *arg)
+static void *
+load_ntwt_plugin(void *arg)
 {
-	struct plugin *p = arg;
 	int (*m)(int, char**);
-	void *handle = dlopen(p->name, RTLD_LAZY);
+	struct ntwt_plugin *plugin = arg;
+	void *handle = dlopen(plugin->name, RTLD_LAZY);
 
 	dlerror();
 
 	/* Workaround that keeps using dlsym c99 complient */
 	*(void **) &m = dlsym(handle, "main");
-	m(p->argc, p->argv);
-	printf("got here\n");
-	dlclose(handle);
 
-	/* int i = 0; */
+	m(plugin->argc, plugin->argv);
+	if (dlclose(handle)) {
+		fprintf(stderr,
+			"Error: Failed to close library %s\n",
+			plugin->name);
+		exit(1);
+	}
 
-	/* for(; i != p->argc; ++i) */
-	/* 	free(p->argv[0]); */
-	/* free(p->argv); */
-	/* free(p->name); */
-	/* free(p); */
-	/* free(stack); */
-	/* asm("movl $" xstr(SYS_exit) ", %eax\n" */
-	/*     "syscall"); */
-	/* Should not be reached since an exit call is made */
-	return 0;
+        *(struct ntwt_plugin **) thread_pass_get(plugin->pass) = plugin;
+	thread_pass_return(plugin->pass);
+
+	pthread_exit(NULL);
 }
 
 void
-start_plugin(char *name)
+ntwt_plugin_start(struct thread_pass *pass, char *name)
 {
-	char *stack = malloc(STACK_SIZE);
-	struct plugin *p = malloc(sizeof(*p));
+	pthread_attr_t attr;
+	struct ntwt_plugin *plugin = malloc(sizeof(*plugin));
 
-	p->name = name;
-	p->argc = 0;
-	p->argv = NULL;
-	p->stack = stack;
+	pthread_attr_init(&attr);
+	pthread_attr_setstacksize(&attr, STACK_SIZE);
 
-        clone(load_plugin, stack + STACK_SIZE,
-	      CLONE_FILES | CLONE_VM |
-	      CLONE_IO | CLONE_SYSVSEM, p);
+	plugin->name = name;
+	plugin->pass = pass;
+	plugin->argc = 0;
+	plugin->argv = NULL;
+	pthread_create(&plugin->thread, NULL, load_ntwt_plugin, plugin);
+	pthread_attr_destroy(&attr);
 }
