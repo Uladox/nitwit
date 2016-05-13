@@ -4,6 +4,7 @@ all: debug
 
 SRC := \
 	client/client.c \
+	client/client_args.c \
 	client/client_io.c \
 	gen/output/op_map.c \
 	server/server.c \
@@ -32,6 +33,7 @@ SERVER_FILES := \
 
 CLIENT_FILES := \
 	client.o \
+	client_args.o \
 	client_io.o \
 	compiler.o \
 	hashmap.o \

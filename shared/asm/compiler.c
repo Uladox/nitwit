@@ -135,7 +135,7 @@ asm_statements(struct ntwt_asm_program *program,
 		.lexme = code,
 		.lexlen = 0,
 		.units = u8_strlen(code),
-		.lineno = 0,
+		.lineno = 1,
 		.token = NTWT_SEMICOLON,
 		.cmds = &program->expr,
 		.error = error

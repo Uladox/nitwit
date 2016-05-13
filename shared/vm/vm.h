@@ -25,9 +25,5 @@ enum ntwt_token {
 	NTWT_STRING
 };
 
-struct thread_pass;
-
 void ntwt_interprete(struct ntwt_vm_state *restrict state,
-		     struct thread_pass *pass,
-		     const char *restrict exec_ptr,
-		     const char *out_name);
+		     const char *restrict exec_ptr);

@@ -39,6 +39,8 @@ load_ntwt_plugin(void *arg)
 		exit(1);
 	}
 
+	free(plugin->name);
+
         *(struct ntwt_plugin **) thread_pass_get(plugin->pass) = plugin;
 	thread_pass_return(plugin->pass);
 

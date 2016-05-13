@@ -38,9 +38,7 @@
 
 void
 ntwt_interprete(struct ntwt_vm_state *restrict state,
-		struct thread_pass *pass,
-		const char *restrict exec_ptr,
-		const char *out_name)
+		const char *restrict exec_ptr)
 {
 
 /* If you look at this ifdef as a big block, it helps. */
@@ -110,12 +108,12 @@ ntwt_interprete(struct ntwt_vm_state *restrict state,
 
 		++exec_ptr;
 		POPSETSTRING(str, size, exec_ptr);
-		ntwt_plugin_start(pass, (char *) str);
+		ntwt_plugin_start(state->pass, (char *) str);
 		next_step();
 	}
 
 	STEP (SAVE) {
-		ntwt_vm_save(state, out_name);
+		ntwt_vm_save(state, state->output);
 		next_step();
 	}
 
