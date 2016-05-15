@@ -13,7 +13,7 @@
 
 #define MOVEBY(POINTER, TYPE, AMOUNT)				\
 	(POINTER = ((char *) (((TYPE *) POINTER) + (AMOUNT))))
-#define COPY(VARIABLE, POINTER)		\
+#define COPY(VARIABLE, POINTER)				\
 	(VARIABLE = *((typeof(VARIABLE) *) POINTER))
 #define POPSET(VARIABLE, POINTER)			\
 	do {						\

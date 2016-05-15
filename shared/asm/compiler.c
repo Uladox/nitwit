@@ -1,3 +1,5 @@
+#define _DEFAULT_SOURCE
+#include <endian.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +27,7 @@ pop(struct ntwt_asm_expr **stack)
 		*stack = (*stack)->next;
 		return tmp;
 	}
+
 	return malloc(sizeof(**stack));
 }
 
@@ -41,12 +44,13 @@ term(struct ntwt_asm_lex_info *info,
 	switch (trm->type = info->token) {
 	case NTWT_UINT:
 		/* treats utf8 as ascii for stroul */
-		cmd->size += (trm->size = sizeof(unsigned int));
-		trm->contents.integer = strtoul((char *) info->lexme, NULL, 0);
+		cmd->size += (trm->size = sizeof(trm->contents.integer));
+		trm->contents.integer =
+			htobe32(strtoul((char *) info->lexme, NULL, 0));
 		break;
 	case NTWT_DOUBLE:
 		/* treats utf8 as ascii for strod */
-		cmd->size += (trm->size = sizeof(double));
+		cmd->size += (trm->size = sizeof(trm->contents.decimal));
 		trm->contents.decimal = strtod((char *) info->lexme, NULL);
 		break;
 	case NTWT_STRING:
@@ -56,7 +60,7 @@ term(struct ntwt_asm_lex_info *info,
 		trm->contents.string[info->lexlen] = '\0';
 		break;
 	case NTWT_OP_CODE:
-		cmd->size += (trm->size = sizeof(char));
+		cmd->size += (trm->size = sizeof(trm->contents.op_code));
 
 		char *result = hashmap_get(&ntwt_op_map,
 					   info->lexme,
@@ -67,6 +71,7 @@ term(struct ntwt_asm_lex_info *info,
 			*info->error = 1;
 			break;
 		}
+
 		trm->contents.op_code = *result;
 		break;
 	default:
@@ -104,12 +109,14 @@ command(struct ntwt_asm_lex_info *info,
 			info->lineno);
 		goto error;
 	}
+
 	if (cmd->contents.list[0].size == -1) {
 		fprintf(stderr,
 			"Error: unrecognized op code on line %u\n",
 			info->lineno);
 		goto error;
 	}
+
 	if (cmd->contents.list[0].type != NTWT_OP_CODE) {
 		fprintf(stderr,
 			"Error: command does not start with OP_CODE on line %u\n",
@@ -171,6 +178,7 @@ asm_command_type_check(struct ntwt_asm_expr *command, int *error)
 			*error = 1;
 			return;
 		}
+
 		if (params[i] != term->type) {
 			fprintf(stderr,
 				"Error: on line %u expected type %s, got %s\n",
@@ -179,6 +187,7 @@ asm_command_type_check(struct ntwt_asm_expr *command, int *error)
 			*error = 1;
 		}
 	}
+
 	if (i - 1 < params[0]) {
 		fprintf(stderr,
 			"Error: too few arguments to %s on line %u, expected %u, got %u\n",
@@ -245,10 +254,9 @@ asm_program_bytecode(struct ntwt_asm_program *program,
 	}
 
 	char *code_ptr = *code;
-	struct ntwt_asm_expr *command;
+	struct ntwt_asm_expr *command = program->expr;
 
-	for (command = program->expr;
-	     command; command = command->next)
+	for (; command; command = command->next)
 		asm_command_bytecode(command, &code_ptr, error);
 }
 
@@ -262,6 +270,7 @@ asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *expr)
 			free(expr->contents.string);
 		else if (expr->type == NTWT_COMMAND)
 			asm_recycle(stack, expr->contents.list);
+
 		tmp = expr;
 		expr = expr->next;
 		tmp->next = *stack;
@@ -279,6 +288,7 @@ asm_expr_free(struct ntwt_asm_expr *expr)
 			free(expr->contents.string);
 		else if (expr->type == NTWT_COMMAND)
 			asm_expr_free(expr->contents.list);
+
 		tmp = expr;
 		expr = expr->next;
 		free(tmp);

@@ -16,7 +16,7 @@ struct ntwt_asm_expr {
 	struct ntwt_asm_expr *next;
 	union {
 		struct ntwt_asm_expr *list;
-		unsigned int integer;
+		uint32_t integer;
 		double decimal;
 		uint8_t *string;
 		char op_code;

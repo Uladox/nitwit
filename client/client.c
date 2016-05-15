@@ -1,3 +1,5 @@
+#define _DEFAULT_SOURCE
+#include <endian.h>
 #include <errno.h>
 #include <locale.h>
 #include <pthread.h>
@@ -20,6 +22,7 @@
 #include "client_args.h"
 #include "client_io.h"
 
+
 static void
 repl(const char *charset, struct ntwt_asm_expr **stack,
      struct ntwt_asm_program *program)
@@ -28,12 +31,11 @@ repl(const char *charset, struct ntwt_asm_expr **stack,
 	uint32_t msg_len;
 	char *io_buff = NULL;
 	size_t io_size = 0;
+	struct ntwt_connection *sock = connection_connect(path);
 
-	struct ntwt_connection *sock;
-
-	sock = connection_connect(path);
 	if (!sock)
 		return;
+
 	while (!connection_end_check(sock)) {
 		ssize_t tmp;
 
@@ -45,8 +47,10 @@ repl(const char *charset, struct ntwt_asm_expr **stack,
 		 * so we convert it to uint32_t by assigning it to msg_len.
 		 */
 		tmp = getline(&io_buff, &io_size, stdin);
-		if (-1 == tmp)
+
+		if (tmp == -1)
 			break;
+
 		msg_len = tmp + 1;
 
 		/* Replaces '\n' with '\0' */
@@ -54,6 +58,7 @@ repl(const char *charset, struct ntwt_asm_expr **stack,
 		compile_and_send(charset, sock, program, stack,
 				 &io_buff, &io_size, &msg_len);
 	}
+
 	putchar('\n');
 	free(io_buff);
 	free_conversions();
@@ -83,17 +88,25 @@ compile_out(FILE *out,
 
 	asm_statements(program, stack, (uint8_t *) *io_buff, &error);
 	asm_program_type_check(program, &error);
+
 	if (error)
 		goto cleanup;
+
 	asm_program_bytecode(program, io_buff, io_size, msg_len, &error);
+
 	if (error)
 		goto cleanup;
-	fwrite(*io_buff, sizeof(char), *io_size, out);
+
+	fwrite(&(uint64_t) { htobe64(NTWT_FILE_MAGIC) },
+	       sizeof(uint64_t), 1, out);
+	if (*msg_len > 0)
+		fwrite(*io_buff, sizeof(char), *io_size, out);
 cleanup:
 	fclose(out);
 	free(*io_buff);
 	asm_expr_free(program->expr);
 	asm_stack_free(*stack);
+
 	if (error)
 		exit(EXIT_FAILURE);
 }
@@ -130,7 +143,7 @@ compile(struct ntwt_asm_expr **stack,
 		file_error(input);
 
 	remove(output);
-	FILE *out = fopen(output, "wb");
+	FILE *out = fopen(output, "ab");
 
 	if (!out) {
 		fclose(src);

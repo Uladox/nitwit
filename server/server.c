@@ -1,3 +1,5 @@
+#define _DEFAULT_SOURCE
+#include <endian.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <locale.h>
@@ -60,6 +62,16 @@ server_loop(struct ntwt_connection *sock, struct ntwt_vm_state *state)
 }
 
 static void
+invalid_image(FILE *image, const char *name)
+{
+	fprintf(stderr,
+		"Error: invalid image \"%s\"\n",
+		name);
+	fclose(image);
+	exit(EXIT_FAILURE);
+}
+
+static void
 load_state(struct ntwt_vm_state *state)
 {
 	long image_size;
@@ -75,11 +87,24 @@ load_state(struct ntwt_vm_state *state)
 
 	fseek(image, 0, SEEK_END);
 	image_size = ftell(image);
+
+	if (image_size < sizeof(uint64_t)) {
+		thread_pass_free(state->pass);
+		invalid_image(image, state->input);
+	}
+
 	rewind(image);
 	image_code = malloc(image_size + 1);
 	fread(image_code, image_size, sizeof(char), image);
+
+	if (*(uint64_t *) image_code != htobe64(NTWT_FILE_MAGIC)) {
+		thread_pass_free(state->pass);
+		free(image_code);
+		invalid_image(image, state->input);
+	}
+
 	image_code[image_size] = NTWT_OP_END;
-	ntwt_interprete(state, image_code);
+	ntwt_interprete(state, image_code + sizeof(uint32_t));
 	free(image_code);
 	fclose(image);
 }

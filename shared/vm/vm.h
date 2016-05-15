@@ -25,5 +25,7 @@ enum ntwt_token {
 	NTWT_STRING
 };
 
+#define NTWT_FILE_MAGIC 0xAFAD4BADE6ADC0DE
+
 void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		     const char *restrict exec_ptr);
