@@ -16,15 +16,16 @@
 
 /* Include these
  * #include <stdint.h>
+ * #include "../list/list.h"
  */
 
 enum { NTWT_HASHMAP_ALREADY_PRESENT, NTWT_HASHMAP_ADDED };
 
 struct ntwt_hashentry {
+	struct ntwt_list next;
 	void *key;
 	uint32_t key_size;
 	void *storage;
-	struct ntwt_hashentry *next;
 };
 
 struct ntwt_hashbin {
@@ -41,27 +42,32 @@ struct ntwt_hashmap {
 	struct ntwt_hashbin *bins;
 };
 
-struct ntwt_hashmap *ntwt_hashmap_new(unsigned int sequence,
-				      int (*compare)(const void *entry_key,
-						     uint32_t entry_key_size,
-						     const void *key,
-						     uint32_t key_size),
-				      void (*free_contents)(void *key,
-							    void *storage));
+struct ntwt_bimap {
+	struct ntwt_hashmap *left;
+	struct ntwt_hashmap *right;
+};
 
-void ntwt_hashmap_free(struct ntwt_hashmap *hashmap);
+struct ntwt_hashmap *
+ntwt_hashmap_new(unsigned int sequence,
+		 int (*compare)(const void *entry_key, uint32_t entry_key_size,
+				const void *key, uint32_t key_size),
+		 void (*free_contents)(void *key, void *storage));
 
-int ntwt_hashmap_add(struct ntwt_hashmap *hashmap,
-		     void *key, uint32_t key_size,
-		     void *storage);
+void
+ntwt_hashmap_free(struct ntwt_hashmap *hashmap);
 
-void ntwt_hashmap_remove(struct ntwt_hashmap *map,
-			 void *key,
-			 uint32_t key_size);
+int
+ntwt_hashmap_add(struct ntwt_hashmap *hashmap,
+		 void *key, uint32_t key_size,
+		 void *storage);
 
-void *ntwt_hashmap_get(const struct ntwt_hashmap *map,
-		       const void *key,
-		       uint32_t key_size);
+void
+ntwt_hashmap_remove(struct ntwt_hashmap *map,
+		    void *key, uint32_t key_size);
+
+void *
+ntwt_hashmap_get(const struct ntwt_hashmap *map,
+		 const void *key, uint32_t key_size);
 
 #if defined NTWT_SHORT_NAMES || defined NTWT_HASHMAP_SHORT_NAMES
 #define hashmap_new(...) ntwt_hashmap_new(__VA_ARGS__)

@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "../list/list.h"
 #include "hashmap.h"
 
 #define QUOTE(...) #__VA_ARGS__
@@ -21,7 +22,7 @@ entry_gen(struct ntwt_hashentry *entry, FILE *output,
 {
 	int entry_num = 0;
 
-	for (; entry; entry = entry->next) {
+	for (; entry; entry = NTWT_LIST_NEXT(entry)) {
 		++entry_num;
 		fputs("&(struct ntwt_hashentry) {", output);
 		fprintf(output, "\n\t\t.key_size = %"PRIu32, entry->key_size);
@@ -31,7 +32,7 @@ entry_gen(struct ntwt_hashentry *entry, FILE *output,
 		fputs(",\n\t\t.storage = ", output);
 		storage_print(output, entry->storage);
 
-		fputs(",\n\t\t.next = ", output);
+		fputs(",\n\t\t.next.next = ", output);
 	}
 	fputs("NULL", output);
 	for (; entry_num; --entry_num)

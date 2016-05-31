@@ -5,6 +5,7 @@
 #include <unistr.h>
 
 #define NTWT_SHORT_NAMES
+#include "../../shared/list/list.h"
 #include "../../shared/hash/hashmap.h"
 #include "../../shared/hash/maputils.h"
 #include "../../shared/vm/state.h"
@@ -70,6 +71,7 @@ main(int argc, char **args)
 
 	ntwt_hashmap_gen(map, output, "ntwt_op_map",
 			 "#include <unistr.h>\n"
+			 "#include \"../../shared/list/list.h\"\n"
 			 "#include \"../../shared/hash/hashmap.h\"\n"
 			 "#include \"../../shared/macros.h\"\n",
 			 compare_str, key_print, storage_print);

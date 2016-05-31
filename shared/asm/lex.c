@@ -116,12 +116,14 @@ lex_op_code(struct ntwt_asm_lex_info *info, const uint8_t *current)
 		++current;
 		--info->units;
 	}
+
 	if (*current == '\0') {
 		fprintf(stderr,
 			"Error: unexpected end of input on line %u\n",
 			info->lineno);
 		*info->error = 1;
 	}
+
 	info->lexlen = current - info->lexme;
 	info->token = NTWT_OP_CODE;
 }
@@ -134,6 +136,7 @@ ntwt_asm_lex(struct ntwt_asm_lex_info *info)
 
 	current += info->lexlen + info->offset;
 	info->units -= info->lexlen + info->offset;
+
 	while (isspace(*current)) {
 		if (*current == '\n')
 			++info->lineno;

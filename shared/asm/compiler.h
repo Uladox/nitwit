@@ -1,7 +1,8 @@
 /* Include these
  * #include <stdint.h>
- * #include "../shared/vm/state.h"
- * #include "../shared/vm/vm.h"
+ * #include "../vm/state.h"
+ * #include "../vm/vm.h"
+ * #include "../list/list.h"
  */
 
 struct ntwt_asm_program {
@@ -10,10 +11,10 @@ struct ntwt_asm_program {
 };
 
 struct ntwt_asm_expr {
+	struct ntwt_list *next;
 	enum ntwt_token type;
 	unsigned int lineno;
 	unsigned int size;
-	struct ntwt_asm_expr *next;
 	union {
 		struct ntwt_asm_expr *list;
 		uint32_t integer;

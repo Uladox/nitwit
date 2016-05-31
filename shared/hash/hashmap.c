@@ -20,6 +20,7 @@
 #include <string.h>
 
 #define NTWT_SHORT_NAMES
+#include "../list/list.h"
 #include "hashmap.h"
 
 #define BIN_MAX_DENSITY 5
@@ -99,7 +100,7 @@ new_hashentry(void *key, uint32_t key_size, void *storage)
 	entry->key = key;
 	entry->key_size = key_size;
 	entry->storage = storage;
-	entry->next = NULL;
+	NTWT_LIST_CONS(entry, NULL);
 	return entry;
 }
 
@@ -109,6 +110,7 @@ hashmap_new(unsigned int sequence,
 			   const void *key2, uint32_t key2_size),
 	    void (*free_contents)(void *key, void *storage))
 {
+	int i = 0;
 	struct ntwt_hashmap *map = malloc(sizeof(*map));
 	struct ntwt_hashbin *bin;
 
@@ -120,12 +122,12 @@ hashmap_new(unsigned int sequence,
 	map->primes_pointer = hashmap_primes;
 	bin = map->bins;
 
-	int i;
 
-	for (i = 0; i != hashmap_primes[sequence]; ++i) {
+	for (; i != hashmap_primes[sequence]; ++i) {
 		bin->first = NULL;
 		++bin;
 	}
+
 	return map;
 }
 
@@ -143,7 +145,7 @@ hashmap_free(struct ntwt_hashmap *map)
 			struct ntwt_hashentry *tmp = entry;
 
 			map->free_contents(entry->key, entry->storage);
-			entry = entry->next;
+			entry = NTWT_LIST_NEXT(entry);
 			free(tmp);
 		}
 	}
@@ -173,14 +175,13 @@ ntwt_hashmap_add(struct ntwt_hashmap *map, void *key, uint32_t key_size,
 	if (map->compare(entry->key, entry->key_size, key, key_size))
 		return NTWT_HASHMAP_ALREADY_PRESENT;
 
+	entry = NTWT_LIST_NEXT(entry);
 
-	while (entry->next) {
-		entry = entry->next;
+	ntwt_foreach (entry)
 		if (map->compare(entry->key, entry->key_size, key, key_size))
 			return NTWT_HASHMAP_ALREADY_PRESENT;
-	}
 
-	entry->next = new_hashentry(key, key_size, storage);
+	NTWT_LIST_CONS(entry, new_hashentry(key, key_size, storage));
 	++map->entry_num;
 	return NTWT_HASHMAP_ADDED;
 }
@@ -188,48 +189,45 @@ ntwt_hashmap_add(struct ntwt_hashmap *map, void *key, uint32_t key_size,
 void
 hashmap_remove(struct ntwt_hashmap *map, void *key, uint32_t key_size)
 {
-	struct ntwt_hashentry *entry;
-	unsigned int row;
-
-	row = murmur3_32(key, key_size, HASH_SEED) % map->bin_num;
-	entry = map->bins[row].first;
+	unsigned int row = murmur3_32(key, key_size, HASH_SEED) % map->bin_num;
+	struct ntwt_hashentry *entry = map->bins[row].first;
 
 	if (!entry)
 		return;
 
 	if (map->compare(entry->key, entry->key_size, key, key_size)) {
-		map->bins[row].first = entry->next;
+		map->bins[row].first = NTWT_LIST_NEXT(entry);
 		map->free_contents(entry->key, entry->storage);
 		--map->entry_num;
 		return;
 	}
 
-	struct ntwt_hashentry *next;
+	struct ntwt_hashentry *prev = entry;
 
-	for (next = entry->next; entry->next; entry = next) {
-		if (map->compare(next->key, next->key_size, key, key_size)) {
-			entry->next = next->next;
-			map->free_contents(next->key, next->storage);
-			free(next);
+	entry = NTWT_LIST_NEXT(entry);
+
+	ntwt_foreach (entry) {
+		if (map->compare(entry->key, entry->key_size, key, key_size)) {
+			NTWT_LIST_CONS(prev, NTWT_LIST_NEXT(entry));
+			map->free_contents(entry->key, entry->storage);
+			free(entry);
 			--map->entry_num;
 			return;
 		}
+		prev = entry;
 	}
 }
 
 void *
 hashmap_get(const struct ntwt_hashmap *map, const void *key, uint32_t key_size)
 {
-	struct ntwt_hashentry *entry;
-	unsigned int row;
+	unsigned int row = murmur3_32(key, key_size, HASH_SEED) % map->bin_num;
+	struct ntwt_hashentry *entry = map->bins[row].first;
 
-	row = murmur3_32(key, key_size, HASH_SEED) % map->bin_num;
-	entry = map->bins[row].first;
-	while (entry) {
+	ntwt_foreach (entry)
 		if (map->compare(entry->key, entry->key_size, key, key_size))
 			return entry->storage;
-		entry = entry->next;
-	}
+
 	return NULL;
 }
 
@@ -239,27 +237,27 @@ rehash_add(struct ntwt_hashbin *bin, struct ntwt_hashentry *entry)
 {
 	struct ntwt_hashentry *tmp = bin->first;
 
-	entry->next = NULL;
+	NTWT_LIST_CONS(entry, NULL);
+
 	if (!tmp) {
 		bin->first = entry;
 		return;
 	}
-	while (tmp->next)
-		tmp = tmp->next;
-	tmp->next = entry;
+
+	/* Finds end of list */
+	while (NTWT_LIST_NEXT(tmp))
+		tmp = NTWT_LIST_NEXT(tmp);
+
+	NTWT_LIST_CONS(tmp, entry);
 }
 
 static void
 rehash(struct ntwt_hashmap *map)
 {
+	int i;
+	unsigned int new_bin_num = map->primes_pointer[1];
+	struct ntwt_hashbin *new_bins = malloc(sizeof(*new_bins) * new_bin_num);
 	struct ntwt_hashbin *bin = map->bins;
-	struct ntwt_hashbin *new_bins;
-	unsigned int new_bin_num;
-
-	new_bin_num = map->primes_pointer[1];
-	new_bins = malloc(sizeof(*new_bins) * new_bin_num);
-
-        int i;
 
 	for (i = 0; i != new_bin_num; ++i)
 		new_bins[i].first = NULL;
@@ -268,15 +266,16 @@ rehash(struct ntwt_hashmap *map)
 		struct ntwt_hashentry *entry = bin->first;
 
 		while (entry) {
-			unsigned int row;
-			struct ntwt_hashentry *tmp = entry->next;
+			unsigned int row = murmur3_32(entry->key,
+						      entry->key_size,
+						      HASH_SEED) % new_bin_num;
+			struct ntwt_hashentry *tmp = NTWT_LIST_NEXT(entry);
 
-			row = murmur3_32(entry->key, entry->key_size,
-					 HASH_SEED) % new_bin_num;
 			rehash_add(new_bins + row, entry);
 			entry = tmp;
 		}
 	}
+
 	free(map->bins);
 	map->bins = new_bins;
 	++map->primes_pointer;
