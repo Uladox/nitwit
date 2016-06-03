@@ -1,5 +1,5 @@
 /* Include these
- * #include "../../shared/hash/hashmap.h"
+ * #include <nitlib/hashmap.h>
  */
 
-extern const struct ntwt_hashmap ntwt_op_map;
+extern const struct nit_hashmap ntwt_op_map;

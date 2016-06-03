@@ -6,9 +6,11 @@
 #include <string.h>
 #include <unistr.h>
 
+#define NIT_SHORT_NAMES
+#include <nitlib/list.h>
+#include <nitlib/hashmap.h>
+
 #define NTWT_SHORT_NAMES
-#include "../list/list.h"
-#include "../hash/hashmap.h"
 #include "../../gen/output/op_map.h"
 #include "../macros.h"
 #include "../vm/state.h"
@@ -25,7 +27,7 @@ pop(struct ntwt_asm_expr **stack)
 {
 	if (*stack) {
 		struct ntwt_asm_expr *tmp = *stack;
-		*stack = NTWT_LIST_NEXT(*stack);
+		*stack = NIT_LIST_NEXT(*stack);
 		return tmp;
 	}
 
@@ -82,7 +84,7 @@ term(struct ntwt_asm_lex_info *info,
 			info->lineno);
 		*info->error = 1;
 	}
-	info->trms = NTWT_NEXT_REF(trm);
+	info->trms = NIT_NEXT_REF(trm);
 	lex(info);
 }
 
@@ -127,7 +129,7 @@ command(struct ntwt_asm_lex_info *info,
 
 	program->size += cmd->size;
 	*info->cmds = cmd;
-	info->cmds = NTWT_NEXT_REF(cmd);
+	info->cmds = NIT_NEXT_REF(cmd);
 	return;
 error:
 	*info->error = 1;
@@ -165,17 +167,21 @@ asm_command_type_check(struct ntwt_asm_expr *cmd, int *error)
 	const char *cmd_name = ntwt_op_name[(uint8_t) term->contents.op_code];
 	const int *params = ntwt_op_args[(uint8_t) term->contents.op_code];
 
-	term = NTWT_LIST_NEXT(term);
+	term = NIT_LIST_NEXT(term);
 
-	int i = 1;
+	int i = 0;
 
-	ntwt_foreach (term) {
+	nit_foreach (term) {
 		++i;
 		if (i > params[0]) {
+			/* Finds how many terms total */
+			term = NIT_LIST_NEXT(term);
+			nit_foreach (term)
+				++i;
+
 			fprintf(stderr,
-				"Error: too many arguments to %s on line %u, expected %u, got more\n",
-			        cmd_name,
-			        cmd_line, params[0]);
+				"Error: too many arguments to %s on line %u, expected %u, got %i\n",
+			        cmd_name, cmd_line, params[0], i);
 			*error = 1;
 			return;
 		}
@@ -189,11 +195,11 @@ asm_command_type_check(struct ntwt_asm_expr *cmd, int *error)
 		}
 	}
 
-	if (i - 1 < params[0]) {
+	if (i < params[0]) {
 		fprintf(stderr,
 			"Error: too few arguments to %s on line %u, expected %u, got %u\n",
 		        cmd_name, cmd_line,
-			params[0], i - 1);
+			params[0], i);
 		*error = 1;
 	}
 }
@@ -203,7 +209,7 @@ asm_program_type_check(struct ntwt_asm_program *program, int *error)
 {
 	struct ntwt_asm_expr *cmd = program->expr;
 
-	ntwt_foreach (cmd)
+	nit_foreach (cmd)
 		asm_command_type_check(cmd, error);
 }
 
@@ -237,7 +243,7 @@ asm_command_bytecode(struct ntwt_asm_expr *cmd, char **code_ptr, int *error)
 {
 	struct ntwt_asm_expr *term = cmd->contents.list;
 
-	ntwt_foreach (term)
+	nit_foreach (term)
 		asm_term_bytecode(term, code_ptr, error);
 }
 
@@ -256,7 +262,7 @@ asm_program_bytecode(struct ntwt_asm_program *program,
 	char *code_ptr = *code;
 	struct ntwt_asm_expr *cmd = program->expr;
 
-	ntwt_foreach (cmd)
+	nit_foreach (cmd)
 		asm_command_bytecode(cmd, &code_ptr, error);
 }
 
@@ -272,8 +278,8 @@ asm_recycle(struct ntwt_asm_expr **stack, struct ntwt_asm_expr *expr)
 			asm_recycle(stack, expr->contents.list);
 
 		tmp = expr;
-		expr = NTWT_LIST_NEXT(expr);
-		NTWT_LIST_CONS(tmp, *stack);
+		expr = NIT_LIST_NEXT(expr);
+		NIT_LIST_CONS(tmp, *stack);
 		*stack = tmp;
 	}
 }
@@ -290,7 +296,7 @@ asm_expr_free(struct ntwt_asm_expr *expr)
 			asm_expr_free(expr->contents.list);
 
 		tmp = expr;
-		expr = NTWT_LIST_NEXT(expr);
+		expr = NIT_LIST_NEXT(expr);
 		free(tmp);
 	}
 }
@@ -302,7 +308,7 @@ asm_stack_free(struct ntwt_asm_expr *stack)
 		struct ntwt_asm_expr *tmp;
 
 		tmp = stack;
-		stack = NTWT_LIST_NEXT(stack);
+		stack = NIT_LIST_NEXT(stack);
 		free(tmp);
 	}
 }

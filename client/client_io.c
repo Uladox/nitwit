@@ -6,9 +6,11 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#define NIT_SHORT_NAMES
+#include <nitlib/socket.h>
+
 #define NTWT_SHORT_NAMES
 #include "../shared/macros.h"
-#include "../shared/socket/socket.h"
 #include "../shared/vm/state.h"
 #include "../shared/vm/vm.h"
 #include "../shared/asm/compiler.h"
@@ -17,7 +19,7 @@
 
 
 #ifdef ASSUME_UTF8
-void compile_and_send(const char *charset, struct ntwt_connection *sock,
+void compile_and_send(const char *charset, struct nit_connection *sock,
 		      struct ntwt_asm_program *program,
 		      struct ntwt_asm_expr **stack,
 		      char **io_buff, size_t *io_size,
@@ -55,7 +57,7 @@ void free_conversions(void)
 static uint8_t *uni_buff;
 static size_t uni_size;
 
-void compile_and_send(const char *charset, struct ntwt_connection *sock,
+void compile_and_send(const char *charset, struct nit_connection *sock,
 		      struct ntwt_asm_program *program,
 		      struct ntwt_asm_expr **stack,
 		      char **io_buff, size_t *io_size,

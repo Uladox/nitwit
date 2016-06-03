@@ -17,8 +17,10 @@
 
 #include <threadpass.h>
 
+#define NIT_SHORT_NAMES
+#include <nitlib/socket.h>
+
 #define NTWT_SHORT_NAMES
-#include "../shared/socket/socket.h"
 #include "../shared/vm/plugin.h"
 #include "../shared/vm/state.h"
 #include "../shared/vm/vm.h"
@@ -41,7 +43,7 @@ free_finished_plugins(struct thread_pass *pass)
 }
 
 static void
-server_loop(struct ntwt_connection *sock, struct ntwt_vm_state *state)
+server_loop(struct nit_connection *sock, struct ntwt_vm_state *state)
 {
 	unsigned int size = 256;
 	char *str = malloc(size);
@@ -114,8 +116,8 @@ main(int argc, char *argv[])
 {
 	setlocale(LC_ALL, "");
 
-	struct ntwt_connecter *find_socket;
-	struct ntwt_connection *connect_socket;
+	struct nit_connecter *find_socket;
+	struct nit_connection *connect_socket;
 	struct ntwt_plugin *holder = NULL;
 	struct thread_pass *pass = thread_pass_new(&holder);
 
@@ -139,7 +141,7 @@ main(int argc, char *argv[])
 	find_socket = connecter_new("echo_socket");
 	connect_socket = connecter_accept(find_socket);
 	server_loop(connect_socket, &state);
-	ntwt_connecter_free(find_socket);
+        connecter_free(find_socket);
         connection_free(connect_socket);
 	return 0;
 }

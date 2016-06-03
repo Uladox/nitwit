@@ -14,8 +14,10 @@
 #include <uniconv.h>
 #include <unistd.h>
 
+#define NIT_SHORT_NAMES
+#include <nitlib/socket.h>
+
 #define NTWT_SHORT_NAMES
-#include "../shared/socket/socket.h"
 #include "../shared/vm/state.h"
 #include "../shared/vm/vm.h"
 #include "../shared/asm/compiler.h"
@@ -31,7 +33,7 @@ repl(const char *charset, struct ntwt_asm_expr **stack,
 	uint32_t msg_len;
 	char *io_buff = NULL;
 	size_t io_size = 0;
-	struct ntwt_connection *sock = connection_connect(path);
+	struct nit_connection *sock = connection_connect(path);
 
 	if (!sock)
 		return;

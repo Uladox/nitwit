@@ -10,8 +10,8 @@ RELEASE_CFLAGS = -std=gnu99 -Ofast -Wall -DASSUME_UTF8
 # 	-DASSUME_UTF8  -DC99_COMPLIANT
 
 # Libs
-SERVER_LIBS = -lthreadpass -lunistring -pthread -ldl
-CLIENT_LIBS = -lunistring
+SERVER_LIBS = -lnit -lthreadpass -lunistring -pthread -ldl
+CLIENT_LIBS = -lnit -lunistring
 
 # compiler and linker
 CC = cc

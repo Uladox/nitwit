@@ -1,13 +1,15 @@
-#!/usr/bin/c ../../shared/hash/hashmap.c ../../shared/hash/maputils.c -lunistring --
+#!/usr/bin/c -- -lnit -lunistring
 
 #include <stdint.h>
 #include <stdio.h>
 #include <unistr.h>
 
+#define NIT_SHORT_NAMES
+#include <nitlib/list.h>
+#include <nitlib/hashmap.h>
+#include <nitlib/maputils.h>
+
 #define NTWT_SHORT_NAMES
-#include "../../shared/list/list.h"
-#include "../../shared/hash/hashmap.h"
-#include "../../shared/hash/maputils.h"
 #include "../../shared/vm/state.h"
 #include "../../shared/vm/vm.h"
 
@@ -61,7 +63,7 @@ main(int argc, char **args)
 	remove("op_map.c");
 
 	FILE *output = fopen("op_map.c", "ab");
-	struct ntwt_hashmap *map = hashmap_new(0, compare, free_contents);
+	struct nit_hashmap *map = hashmap_new(0, compare, free_contents);
 
 	MAP_ADD_OP(map, u8"TEST", NTWT_OP_TEST);
 	MAP_ADD_OP(map, u8"END", NTWT_OP_END);
@@ -69,10 +71,10 @@ main(int argc, char **args)
 	MAP_ADD_OP(map, u8"EXEC", NTWT_OP_EXEC);
 	MAP_ADD_OP(map, u8"SAVE", NTWT_OP_SAVE);
 
-	ntwt_hashmap_gen(map, output, "ntwt_op_map",
+	nit_hashmap_gen(map, output, "ntwt_op_map",
 			 "#include <unistr.h>\n"
-			 "#include \"../../shared/list/list.h\"\n"
-			 "#include \"../../shared/hash/hashmap.h\"\n"
+			 "#include <nitlib/list.h>\n"
+			 "#include <nitlib/hashmap.h>\n"
 			 "#include \"../../shared/macros.h\"\n",
 			 compare_str, key_print, storage_print);
 

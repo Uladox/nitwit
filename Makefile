@@ -11,8 +11,6 @@ SRC := \
 	server/server_args.c \
 	shared/asm/compiler.c \
 	shared/asm/lex.c \
-	shared/hash/hashmap.c \
-	shared/socket/socket.c \
 	shared/unicode/unihelpers.c \
 	shared/vm/plugin.c \
 	shared/vm/state.c \
@@ -26,7 +24,6 @@ RELEASE_PATH := bin/release
 SERVER_FILES := \
 	server.o \
 	server_args.o \
-	socket.o \
 	state.o \
 	vm.o \
 	plugin.o
@@ -36,10 +33,8 @@ CLIENT_FILES := \
 	client_args.o \
 	client_io.o \
 	compiler.o \
-	hashmap.o \
 	lex.o \
 	op_map.o \
-	socket.o \
 	unihelpers.o \
 	vm_data.o
 
@@ -53,13 +48,11 @@ GENERATED_FILES := \
 	gen/output/op_map.c
 
 server_deps := \
-	shared/socket/socket.h \
 	shared/vm/vm.h
 
 client_deps := \
 	client/client_io.h \
 	shared/asm/compiler.h \
-	shared/socket/socket.h \
 	shared/unicode/unihelpers.h \
 	shared/vm/vm.h
 
