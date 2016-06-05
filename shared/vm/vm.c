@@ -5,7 +5,10 @@
 #include <unistd.h>
 #include <unistr.h>
 
-#include "../unicode/unihelpers.h"
+#define NIT_SHORT_NAMES
+#include <nitlib/io.h>
+
+#define NTWT_SHORT_NAMES
 #include "plugin.h"
 #include "state.h"
 #include "vm.h"

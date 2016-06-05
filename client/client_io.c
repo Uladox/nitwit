@@ -7,6 +7,7 @@
 #include <sys/un.h>
 
 #define NIT_SHORT_NAMES
+#include <nitlib/io.h>
 #include <nitlib/socket.h>
 
 #define NTWT_SHORT_NAMES
@@ -14,7 +15,6 @@
 #include "../shared/vm/state.h"
 #include "../shared/vm/vm.h"
 #include "../shared/asm/compiler.h"
-#include "../shared/unicode/unihelpers.h"
 #include "client_io.h"
 
 

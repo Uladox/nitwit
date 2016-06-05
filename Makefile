@@ -11,7 +11,6 @@ SRC := \
 	server/server_args.c \
 	shared/asm/compiler.c \
 	shared/asm/lex.c \
-	shared/unicode/unihelpers.c \
 	shared/vm/plugin.c \
 	shared/vm/state.c \
 	shared/vm/vm.c \
@@ -35,7 +34,6 @@ CLIENT_FILES := \
 	compiler.o \
 	lex.o \
 	op_map.o \
-	unihelpers.o \
 	vm_data.o
 
 GENERATED_FILES := \
@@ -53,7 +51,6 @@ server_deps := \
 client_deps := \
 	client/client_io.h \
 	shared/asm/compiler.h \
-	shared/unicode/unihelpers.h \
 	shared/vm/vm.h
 
 op_map := \
