@@ -4,7 +4,6 @@
 
 const char *restrict const ntwt_type_name[] = {
 	[NTWT_OP_CODE] = "OP_CODE",
-	[NTWT_CHAR]    = "CHAR",
 	[NTWT_UINT]    = "UINT",
 	[NTWT_INT]     = "INT",
 	[NTWT_DOUBLE]  = "DOUBLE",

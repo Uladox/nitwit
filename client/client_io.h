@@ -1,15 +1,15 @@
 /* Include these.
+ * #include <stdlib.h> or <stddef.h>
+ * #include <stdint.h>
+ * #include <spar/core.h>
  * #include <nitlib/socket.h>
- * #include "../shared/vm/state.h"
- * #include "../shared/vm/vm.h"
- * #include "../shared/asm/compiler.h"
+ * #include <nitlib/list.h>
+ * #include "../shared/asm/nnn_expr.h"
+ * #include "../shared/asm/nnn_prog.h"
  */
 
 void compile_and_send(const char *charset, struct nit_connection *sock,
-		      struct ntwt_asm_program *program,
-		      struct ntwt_asm_expr **stack,
-		      char **io_buff, size_t *io_size,
-		      uint32_t *msg_len);
+		      struct nnn_prog *prog, struct nnn_bcode *bcode);
 
 void prompt(void);
 

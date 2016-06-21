@@ -9,8 +9,9 @@ SRC := \
 	gen/output/op_map.c \
 	server/server.c \
 	server/server_args.c \
-	shared/asm/compiler.c \
-	shared/asm/lex.c \
+	shared/asm/nnn_parser.c \
+	shared/asm/nnn_expr.c \
+	shared/asm/nnn_prog.c \
 	shared/vm/plugin.c \
 	shared/vm/state.c \
 	shared/vm/vm.c \
@@ -31,8 +32,9 @@ CLIENT_FILES := \
 	client.o \
 	client_args.o \
 	client_io.o \
-	compiler.o \
-	lex.o \
+	nnn_parser.o \
+	nnn_expr.o \
+	nnn_prog.o \
 	op_map.o \
 	vm_data.o
 
@@ -50,7 +52,6 @@ server_deps := \
 
 client_deps := \
 	client/client_io.h \
-	shared/asm/compiler.h \
 	shared/vm/vm.h
 
 op_map := \

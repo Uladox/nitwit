@@ -45,13 +45,14 @@ free_finished_plugins(struct thread_pass *pass)
 static void
 server_loop(struct nit_connection *sock, struct ntwt_vm_state *state)
 {
-	unsigned int size = 256;
+	uint32_t size = 256;
 	char *str = malloc(size);
 
 	while (!connection_end_check(sock)) {
 		int msg_size;
 
 		if (connection_read(sock, &str, &size, &msg_size, 1) == 1) {
+			printf("\nmsg_size: %u\n", msg_size);
 			str[msg_size] = NTWT_OP_END;
 			ntwt_interprete(state, str);
 		}

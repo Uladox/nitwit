@@ -3,6 +3,7 @@
  */
 
 enum ntwt_op_code {
+	NTWT_OP_INVALID,
 	NTWT_OP_READ,
 	NTWT_OP_END,
 /* IO operations */
@@ -15,10 +16,8 @@ enum ntwt_op_code {
 
 enum ntwt_token {
 	NTWT_EOI,
-	NTWT_SEMICOLON,
-	NTWT_COMMAND,
+	NTWT_SEMI,
 	NTWT_OP_CODE,
-	NTWT_CHAR,
 	NTWT_UINT,
 	NTWT_INT,
 	NTWT_DOUBLE,
