@@ -1,4 +1,3 @@
-#include "state.h"
 #include "vm.h"
 #include "vm_data.h"
 

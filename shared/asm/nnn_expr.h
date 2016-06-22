@@ -3,31 +3,8 @@
  * #include <stdint.h>
  * #include <spar/core.h>
  * #include <nitlib/list.h>
- * #include "../vm/state.h"
  * #include "../vm/vm.h"
  */
-
-enum ntwt_token {
-	NTWT_EOI,
-	NTWT_SEMI,
-	NTWT_OP_CODE,
-	NTWT_UINT,
-	NTWT_INT,
-	NTWT_DOUBLE,
-	NTWT_STRING
-};
-
-enum ntwt_op_code {
-	NTWT_OP_INVALID,
-	NTWT_OP_READ,
-	NTWT_OP_END,
-/* IO operations */
-	NTWT_OP_TEST,
-	NTWT_OP_ECHO,
-	NTWT_OP_EXEC,
-/* Writing operations */
-	NTWT_OP_SAVE
-};
 
 struct nnn_prog {
 	size_t size;

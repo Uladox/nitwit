@@ -1,6 +1,4 @@
-/* Include these
- * #include "state.h"
- */
+#define NTWT_FILE_MAGIC 0xAFAD4BADE6ADC0DE
 
 enum ntwt_op_code {
 	NTWT_OP_INVALID,
@@ -24,7 +22,14 @@ enum ntwt_token {
 	NTWT_STRING
 };
 
-#define NTWT_FILE_MAGIC 0xAFAD4BADE6ADC0DE
+struct thread_pass;
+
+struct ntwt_vm_state {
+	struct thread_pass *pass;
+	const char *output;
+	const char *input;
+};
+
 
 void ntwt_interprete(struct ntwt_vm_state *restrict state,
 		     const char *restrict exec_ptr);

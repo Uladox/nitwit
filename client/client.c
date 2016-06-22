@@ -22,12 +22,10 @@
 
 #define NTWT_SHORT_NAMES
 #include "client_args.h"
+#include "../shared/vm/vm.h"
 #include "../shared/asm/nnn_expr.h"
 #include "../shared/asm/nnn_prog.h"
 #include "client_io.h"
-
-/* Move this, eventually. */
-#define NTWT_FILE_MAGIC 0xAFAD4BADE6ADC0DE
 
 static void
 repl(const char *charset, struct nnn_prog *prog)
@@ -83,7 +81,7 @@ compile_out(FILE *out, struct nnn_prog *prog, struct nnn_bcode *bcode)
 	int error = 0;
 
 	nnn_prog_get(prog, (uint8_t *) bcode->code, &error);
-
+	nnn_prog_type_check(prog, &error);
 	/* asm_program_type_check(program, &error); */
 
 	if (error)

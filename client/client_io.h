@@ -4,6 +4,7 @@
  * #include <spar/core.h>
  * #include <nitlib/socket.h>
  * #include <nitlib/list.h>
+ * #include "../shared/vm/vm.h"
  * #include "../shared/asm/nnn_expr.h"
  * #include "../shared/asm/nnn_prog.h"
  */

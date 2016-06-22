@@ -9,42 +9,30 @@
 
 #include <spar/core.h>
 #include <spar/text_utils.h>
+#include <spar/token_print.h>
 #include <spar/strlit_parser.h>
 #include <spar/word_parser.h>
 #include <spar/num_parser.h>
 
-/* #include "../vm/state.h" */
-/* #include "../vm/vm.h" */
 #include "../../gen/output/op_map.h"
+
+#include "../vm/vm.h"
 #include "nnn_parser.h"
 #include "nnn_expr.h"
 
-#include <spar/token_print.h>
 
-static inline struct  nnn_expr*
-pop(struct nnn_prog *prog)
-{
-	if (prog->stack) {
-		struct nnn_expr *tmp = prog->stack;
-
-		prog->stack = LIST_NEXT(tmp);
-		return tmp;
-	}
-
-	return malloc(sizeof(*prog->stack));
-}
+struct nnn_expr *
+nnn_prog_pop(struct nnn_prog *prog);
 
 static inline void
 nnn_set_op_code(struct nnn_prog *prog, struct nnn_expr *expr,
 		struct spar_token *token, enum spar_parsed *error)
 {
+	const char *result;
+
 	expr->type = NTWT_OP_CODE;
 	prog->size += (expr->size = sizeof(expr->dat.op_code));
-
-	if (*error)
-		return;
-
-	char *result = hashmap_get(&ntwt_op_map, token->dat.text, token->len);
+	result = hashmap_get(&ntwt_op_map, token->dat.text, token->len);
 
 	if (!result) {
 		*error = SPAR_ERROR;
@@ -99,7 +87,7 @@ struct nnn_expr *
 nnn_expr_get(struct nnn_prog *prog, struct spar_lexinfo *info,
 	     struct spar_token *token, enum spar_parsed *error)
 {
-	struct nnn_expr *expr = pop(prog);
+	struct nnn_expr *expr = nnn_prog_pop(prog);
 
 	if (spar_parse(&nnn_parser, info, token) == SPAR_ERROR) {
 		*error = SPAR_ERROR;

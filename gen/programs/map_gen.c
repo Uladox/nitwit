@@ -10,7 +10,6 @@
 #include <nitlib/maputils.h>
 
 #define NTWT_SHORT_NAMES
-#include "../../shared/vm/state.h"
 #include "../../shared/vm/vm.h"
 
 #define QUOTE(...) #__VA_ARGS__

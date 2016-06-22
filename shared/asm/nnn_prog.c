@@ -9,11 +9,31 @@
 #include <spar/core.h>
 #include <spar/text_utils.h>
 
-/* #include "../vm/state.h" */
-/* #include "../vm/vm.h" */
+#include "../vm/vm.h"
+#include "../vm/vm_data.h"
 #include "nnn_parser.h"
 #include "nnn_expr.h"
 #include "nnn_prog.h"
+
+void
+nnn_prog_push(struct nnn_prog *prog, struct nnn_expr *expr)
+{
+	LIST_CONS(expr, prog->stack);
+	prog->stack = expr;
+}
+
+struct nnn_expr *
+nnn_prog_pop(struct nnn_prog *prog)
+{
+	if (prog->stack) {
+		struct nnn_expr *tmp = prog->stack;
+
+		prog->stack = LIST_NEXT(tmp);
+		return tmp;
+	}
+
+	return malloc(sizeof(*prog->stack));
+}
 
 void
 nnn_prog_empty(struct nnn_prog *prog)
@@ -50,11 +70,13 @@ nnn_prog_recycle(struct nnn_prog *prog)
 }
 
 static inline void
-bad_cmd_skip(struct spar_lexinfo *info)
+bad_cmd_skip(struct spar_lexinfo *info, struct spar_token *token)
 {
 	for (;; ++info->dat.text) {
 		switch (*info->dat.text) {
 		case ';':
+			token->type = nnn_type_semi;
+			++info->dat.text;
 		case '\0':
 			return;
 		}
@@ -67,6 +89,13 @@ is_bad_cmd(struct nnn_expr *expr1, struct nnn_expr *expr2)
 	return expr1->type == NTWT_SEMI &&
 		expr2->type == NTWT_OP_CODE &&
 	        expr2->dat.op_code == NTWT_OP_INVALID;
+}
+
+static inline int
+extra_semi(struct nnn_expr *expr1, struct nnn_expr *expr2)
+{
+	return expr1->type == NTWT_SEMI &&
+		expr2->type == NTWT_SEMI;
 }
 
 void
@@ -90,12 +119,22 @@ nnn_prog_get(struct nnn_prog *prog, uint8_t *code, int *error)
 	nnn_prog_recycle(prog);
 	prog->expr = (expr = nnn_expr_get(prog, &info, &token, &parsed));
 
+	while (expr->type != NTWT_EOI &&
+	       expr->dat.op_code == NTWT_OP_INVALID) {
+		bad_cmd_skip(&info, &token);
+		nnn_prog_push(prog, expr);
+		prog->expr = (expr = nnn_expr_get(prog, &info,
+						 &token, &parsed));
+	}
+
 	while (expr->type != NTWT_EOI) {
 	        expr2 = nnn_expr_get(prog, &info, &token, &parsed);
+
 		if (is_bad_cmd(expr, expr2)) {
-			bad_cmd_skip(&info);
-			LIST_CONS(expr2, prog->stack);
-			prog->stack = expr2;
+			bad_cmd_skip(&info, &token);
+		        nnn_prog_push(prog, expr2);
+		} else if (extra_semi(expr, expr2)) {
+			nnn_prog_push(prog, expr2);
 		} else {
 			LIST_CONS(expr, expr2);
 			expr = expr2;
@@ -146,6 +185,7 @@ void
 nnn_prog_bytecode(struct nnn_prog *prog, struct nnn_bcode *bcode, int *error)
 {
 	bcode->size = prog->size;
+
 	if (prog->size > bcode->max) {
 		free(bcode->code);
 		bcode->code = malloc(prog->size);
@@ -172,74 +212,68 @@ nnn_prog_bytecode(struct nnn_prog *prog, struct nnn_bcode *bcode, int *error)
 	}
 }
 
-/* void */
-/* nnn_prog_type_check(struct nnn_prog *prog, int *error) */
-/* { */
-/* 	struct ntwt_asm_expr *term = cmd->contents.list; */
-/* 	const unsigned int cmd_line = term->lineno; */
-/* 	const char *op_name = ntwt_op_name[(uint8_t) term->contents.op_code]; */
-/* 	const int *params = ntwt_op_args[(uint8_t) term->contents.op_code]; */
+void
+nnn_prog_type_check(struct nnn_prog *prog, int *error)
+{
+	struct nnn_expr *expr = prog->expr;
+	int args = -1;
 
-/* 	term = NIT_LIST_NEXT(term); */
+	struct nnn_expr *op;
+	const char *op_name;
+	const int *params;
 
-/* 	int i = 0; */
+	foreach (expr) {
+		if (expr->type == NTWT_EOI)
+			return;
 
-/* 	nit_foreach (term) { */
-/* 		++i; */
-/* 		if (i > params[0]) { */
-/* 			/\* Finds how many terms total *\/ */
-/* 			term = NIT_LIST_NEXT(term); */
-/* 			nit_foreach (term) */
-/* 				++i; */
+		if (expr->type == NTWT_SEMI) {
+			if (args < params[0]) {
+				*error = 1;
+				fprintf(stderr,
+					"Error: too few arguments to %s on "
+					"line %zu, expected %u, got %u\n",
+					op_name, op->line, params[0], args);
+			}
 
-/* 			fprintf(stderr, */
-/* 				"Error: too many arguments to %s on line %u, expected %u, got %i\n", */
-/* 			        cmd_name, cmd_line, params[0], i); */
-/* 			*error = 1; */
-/* 			return; */
-/* 		} */
+			args = -1;
+			continue;
+		}
 
-/* 		if (params[i] != term->type) { */
-/* 			fprintf(stderr, */
-/* 				"Error: on line %u expected type %s, got %s\n", */
-/* 				term->lineno, ntwt_type_name[params[i]], */
-/* 				ntwt_type_name[term->type]); */
-/* 			*error = 1; */
-/* 		} */
-/* 	} */
+		if (args == -1) {
+			args = 0;
+			op = expr;
+			op_name = ntwt_op_name[(uint8_t) op->dat.op_code];
+			params = ntwt_op_args[(uint8_t) op->dat.op_code];
+			continue;
+		}
 
-/* 	if (i < params[0]) { */
-/* 		fprintf(stderr, */
-/* 			"Error: too few arguments to %s on line %u, expected %u, got %u\n", */
-/* 		        cmd_name, cmd_line, */
-/* 			params[0], i); */
-/* 		*error = 1; */
-/* 	} */
-/* } */
+		++args;
 
-/* static inline void */
-/* statement_type_check(struct nnn_expr *expr, int *error) */
-/* { */
-/* 	const char *op_name = ntwt_op_name[(uint8_t) expr->dat.op_code]; */
-/* 	const int *params = ntwt_op_args[(uint8_t) expr->dat.op_code]; */
+		if (args > params[0]) {
+			*error = 1;
 
-/* } */
+			expr = LIST_NEXT(expr);
+			foreach (expr) {
+				if (expr->type == NTWT_SEMI)
+					break;
+				++args;
+			}
 
-/* void */
-/* nnn_prog_type_check(struct nnn_prog *prog, int *error) */
-/* { */
-/* 	struct nnn_expr *expr = prog->expr; */
-/* 	int args = -1; */
+			fprintf(stderr,
+				"Error: too many arguments to %s on line %zu, "
+				"expected %u, got %i.\n",
+			        op_name, op->line, params[0], args);
 
-/* 	foreach (expr) { */
-/* 		if (expr->type == NTWT_EOI) */
-/* 			return; */
-/* 		if (expr->type == NTWT_SEMI) { */
-/* 			args = -1; */
-/* 			continue; */
-/* 		} */
-/* 		if (args == -1) { */
-/* 			args = 0; */
-/* 		} */
-/* 	} */
-/* } */
+			args = -1;
+			continue;
+		}
+
+		if (params[args] != expr->type) {
+			*error = 1;
+			fprintf(stderr,
+				"Error: on line %zu expected type %s, got %s.\n",
+				expr->line, ntwt_type_name[params[args]],
+				ntwt_type_name[expr->type]);
+		}
+	}
+}

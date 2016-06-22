@@ -10,9 +10,8 @@
 
 #define NTWT_SHORT_NAMES
 #include "plugin.h"
-#include "state.h"
 #include "vm.h"
-
+#include "state.h"
 
 #define MOVEBY(POINTER, TYPE, AMOUNT)				\
 	(POINTER = ((char *) (((TYPE *) POINTER) + (AMOUNT))))

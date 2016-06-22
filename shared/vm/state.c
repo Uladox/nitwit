@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <unistr.h>
 
-#include "state.h"
 #include "vm.h"
+#include "state.h"
 
 void ntwt_vm_save(struct ntwt_vm_state *state, const char *out_name)
 {

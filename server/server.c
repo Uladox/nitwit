@@ -22,7 +22,6 @@
 
 #define NTWT_SHORT_NAMES
 #include "../shared/vm/plugin.h"
-#include "../shared/vm/state.h"
 #include "../shared/vm/vm.h"
 #include "server_args.h"
 
@@ -52,7 +51,6 @@ server_loop(struct nit_connection *sock, struct ntwt_vm_state *state)
 		int msg_size;
 
 		if (connection_read(sock, &str, &size, &msg_size, 1) == 1) {
-			printf("\nmsg_size: %u\n", msg_size);
 			str[msg_size] = NTWT_OP_END;
 			ntwt_interprete(state, str);
 		}

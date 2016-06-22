@@ -14,6 +14,7 @@
 #include <nitlib/socket.h>
 
 #define NTWT_SHORT_NAMES
+#include "../shared/vm/vm.h"
 #include "../shared/asm/nnn_expr.h"
 #include "../shared/asm/nnn_prog.h"
 #include "client_io.h"
@@ -26,7 +27,7 @@ void compile_and_send(const char *charset, struct nit_connection *sock,
 	uint32_t msg_len;
 
 	nnn_prog_get(prog, (uint8_t *) bcode->code, &error);
-	/* asm_program_type_check(program, &error); */
+	nnn_prog_type_check(prog, &error);
 
 	if (error)
 		return;
@@ -68,7 +69,7 @@ void compile_and_send(const char *charset, struct nit_connection *sock,
 	get_u8(charset, bcode->code, msg_len, &uni_buff, &uni_size);
 
 	nnn_prog_get(prog, (uint8_t *) uni_buff, &error);
-	/* asm_program_type_check(program, &error); */
+	nnn_prog_type_check(prog, &error);
 
 	if (error)
 		return;

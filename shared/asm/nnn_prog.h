@@ -3,6 +3,7 @@
  * #include <stdint.h>
  * #include <spar/core.h>
  * #include <nitlib/list.h>
+ * #include "../vm/vm.h"
  * #include "nnn_expr.h"
  */
 
@@ -20,6 +21,12 @@ struct nnn_bcode {
 };
 
 void
+nnn_prog_push(struct nnn_prog *prog, struct nnn_expr *expr);
+
+struct nnn_expr *
+nnn_prog_pop(struct nnn_prog *prog);
+
+void
 nnn_prog_empty(struct nnn_prog *prog);
 
 void
@@ -27,6 +34,9 @@ nnn_prog_get(struct nnn_prog *prog, uint8_t *code, int *error);
 
 void
 nnn_prog_bytecode(struct nnn_prog *prog, struct nnn_bcode *bcode, int *error);
+
+void
+nnn_prog_type_check(struct nnn_prog *prog, int *error);
 
 void
 nnn_prog_print(struct nnn_prog *prog);
