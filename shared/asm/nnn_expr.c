@@ -53,15 +53,17 @@ static inline void
 nnn_set_string(struct nnn_prog *prog, struct nnn_expr *expr,
 	       struct spar_token *token, enum spar_parsed *error)
 {
-	char *str = malloc(token->data_size);
-
 	expr->type = NTWT_STRING;
 	prog->size += (expr->size = token->data_size);
 
-	strncpy(str, token->dat.text + 1, token->len - 1);
-	str[token->data_size - 1] = '\0';
-
-	expr->dat.string = str;
+	if (spar_strlit_str(token, &expr->dat.string) == SPAR_ERROR) {
+		*error = SPAR_ERROR;
+		fprintf(stderr,
+			"Error: on line %zu, invalid string ",
+			expr->line);
+		spar_fprint_text_token(token, stderr);
+		printf("\n");
+	}
 }
 
 static inline void

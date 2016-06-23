@@ -105,7 +105,7 @@ load_state(struct ntwt_vm_state *state)
 	}
 
 	image_code[image_size] = NTWT_OP_END;
-	ntwt_interprete(state, image_code + sizeof(uint32_t));
+	ntwt_interprete(state, image_code + sizeof(uint64_t));
 	free(image_code);
 	fclose(image);
 }

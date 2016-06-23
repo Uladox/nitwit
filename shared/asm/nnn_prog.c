@@ -98,6 +98,22 @@ extra_semi(struct nnn_expr *expr1, struct nnn_expr *expr2)
 		expr2->type == NTWT_SEMI;
 }
 
+static inline struct nnn_expr *
+first_expr(struct nnn_prog *prog, struct spar_lexinfo *info,
+	   struct spar_token *token, enum spar_parsed *parsed)
+{
+	struct nnn_expr *expr = nnn_expr_get(prog, info, token, parsed);
+
+	while (expr->type != NTWT_EOI &&
+	       expr->dat.op_code == NTWT_OP_INVALID) {
+		bad_cmd_skip(info, token);
+		nnn_prog_push(prog, expr);
+	        expr = nnn_expr_get(prog, info, token, parsed);
+	}
+
+	return expr;
+}
+
 void
 nnn_prog_get(struct nnn_prog *prog, uint8_t *code, int *error)
 {
@@ -117,15 +133,7 @@ nnn_prog_get(struct nnn_prog *prog, uint8_t *code, int *error)
 	};
 
 	nnn_prog_recycle(prog);
-	prog->expr = (expr = nnn_expr_get(prog, &info, &token, &parsed));
-
-	while (expr->type != NTWT_EOI &&
-	       expr->dat.op_code == NTWT_OP_INVALID) {
-		bad_cmd_skip(&info, &token);
-		nnn_prog_push(prog, expr);
-		prog->expr = (expr = nnn_expr_get(prog, &info,
-						 &token, &parsed));
-	}
+	prog->expr = (expr = first_expr(prog, &info, &token, &parsed));
 
 	while (expr->type != NTWT_EOI) {
 	        expr2 = nnn_expr_get(prog, &info, &token, &parsed);
@@ -133,8 +141,6 @@ nnn_prog_get(struct nnn_prog *prog, uint8_t *code, int *error)
 		if (is_bad_cmd(expr, expr2)) {
 			bad_cmd_skip(&info, &token);
 		        nnn_prog_push(prog, expr2);
-		} else if (extra_semi(expr, expr2)) {
-			nnn_prog_push(prog, expr2);
 		} else {
 			LIST_CONS(expr, expr2);
 			expr = expr2;
@@ -239,15 +245,15 @@ nnn_prog_type_check(struct nnn_prog *prog, int *error)
 			continue;
 		}
 
-		if (args == -1) {
-			args = 0;
+		++args;
+
+		if (args == 0) {
 			op = expr;
 			op_name = ntwt_op_name[(uint8_t) op->dat.op_code];
 			params = ntwt_op_args[(uint8_t) op->dat.op_code];
 			continue;
 		}
 
-		++args;
 
 		if (args > params[0]) {
 			*error = 1;
