@@ -10,16 +10,15 @@
 #include <spar/core.h>
 #include <spar/text_utils.h>
 #include <spar/token_print.h>
-#include <spar/strlit_parser.h>
-#include <spar/word_parser.h>
-#include <spar/num_parser.h>
+#include <spar/cusstrlit.h>
+#include <spar/cusword.h>
+#include <spar/cusnum.h>
 
 #include "../../gen/output/op_map.h"
 
 #include "../vm/vm.h"
 #include "nnn_parser.h"
 #include "nnn_expr.h"
-
 
 struct nnn_expr *
 nnn_prog_pop(struct nnn_prog *prog);
@@ -30,7 +29,7 @@ nnn_set_op_code(struct nnn_prog *prog, struct nnn_expr *expr,
 {
 	const char *result;
 
-	expr->type = NTWT_OP_CODE;
+	/* expr->type = NTWT_OP_CODE; */
 	prog->size += (expr->size = sizeof(expr->dat.op_code));
 	result = hashmap_get(&ntwt_op_map, token->dat.text, token->len);
 
@@ -53,7 +52,7 @@ static inline void
 nnn_set_string(struct nnn_prog *prog, struct nnn_expr *expr,
 	       struct spar_token *token, enum spar_parsed *error)
 {
-	expr->type = NTWT_STRING;
+	/* expr->type = NTWT_STRING; */
 	prog->size += (expr->size = token->data_size);
 
 	if (spar_strlit_str(token, &expr->dat.string) == SPAR_ERROR) {
@@ -70,7 +69,7 @@ static inline void
 nnn_set_uint(struct nnn_prog *prog, struct nnn_expr *expr,
 	     struct spar_token *token)
 {
-	expr->type = NTWT_UINT;
+	/* expr->type = NTWT_UINT; */
 	prog->size += (expr->size = sizeof(expr->dat.integer));
 	expr->dat.integer = strtoul(token->dat.text, NULL, 0);
 }
@@ -79,7 +78,7 @@ static inline void
 nnn_set_double(struct nnn_prog *prog, struct nnn_expr *expr,
 	       struct spar_token *token)
 {
-	expr->type = NTWT_DOUBLE;
+	/* expr->type = NTWT_DOUBLE; */
 	prog->size += (expr->size = sizeof(expr->dat.decimal));
 	expr->dat.integer = strtod(token->dat.text, NULL);
 }
@@ -101,18 +100,27 @@ nnn_expr_get(struct nnn_prog *prog, struct spar_lexinfo *info,
 	info->dat.text += token->len;
 	expr->line = info->cue.text->lines;
 
-	if (token->type == spar_type_word) {
+	switch (expr->type = *token->type.enum_ptr) {
+	case NTWT_OP_CODE:
 		nnn_set_op_code(prog, expr, token, error);
-	} else if (token->type == spar_type_strlit) {
+		break;
+	case NTWT_STRING:
 	        nnn_set_string(prog, expr, token, error);
-	} else if (token->type == spar_type_whole) {
+		break;
+	case NTWT_UINT:
 		nnn_set_uint(prog, expr, token);
-	} else if (token->type == spar_type_decimal) {
+		break;
+	case NTWT_INT:
+		/* Handle this latter! */
+	case NTWT_DOUBLE:
 	        nnn_set_double(prog, expr, token);
-	} else if (token->type == nnn_type_semi) {
+		break;
+	case NTWT_SEMI:
 		expr->type = NTWT_SEMI;
-	} else if (token->type == spar_type_end) {
+		break;
+	case NTWT_EOI:
 		expr->type = NTWT_EOI;
+		break;
 	}
 
 	return expr;

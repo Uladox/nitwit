@@ -82,7 +82,6 @@ compile_out(FILE *out, struct nnn_prog *prog, struct nnn_bcode *bcode)
 
 	nnn_prog_get(prog, (uint8_t *) bcode->code, &error);
 	nnn_prog_type_check(prog, &error);
-	/* asm_program_type_check(program, &error); */
 
 	if (error)
 		goto cleanup;

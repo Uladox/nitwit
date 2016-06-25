@@ -75,7 +75,7 @@ bad_cmd_skip(struct spar_lexinfo *info, struct spar_token *token)
 	for (;; ++info->dat.text) {
 		switch (*info->dat.text) {
 		case ';':
-			token->type = nnn_type_semi;
+			token->type.generic = &nnn_semi;
 			++info->dat.text;
 		case '\0':
 			return;
@@ -121,10 +121,10 @@ nnn_prog_get(struct nnn_prog *prog, uint8_t *code, int *error)
 	struct nnn_expr *expr2;
 	enum spar_parsed parsed = SPAR_OK;
 	struct spar_token token = {
-		.type = nnn_type_semi
+		.type.generic = &nnn_semi
 	};
 	struct spar_text_cue text_cue = {
-		.lines = 0
+		.lines = 1
 	};
 	struct spar_lexinfo info = {
 		.dat.text = (char *) code,
@@ -151,40 +151,6 @@ nnn_prog_get(struct nnn_prog *prog, uint8_t *code, int *error)
 
 	if (parsed == SPAR_ERROR)
 		*error = 1;
-}
-
-void
-nnn_prog_print(struct nnn_prog *prog)
-{
-	struct nnn_expr *expr = prog->expr;
-
-	foreach (expr) {
-		switch (expr->type) {
-		case NTWT_EOI:
-			printf("EOI");
-			break;
-		case NTWT_SEMI:
-			printf(";");
-			break;
-		case NTWT_OP_CODE:
-			printf("OP");
-			break;
-		case NTWT_UINT:
-			printf("UINT");
-			break;
-		case NTWT_INT:
-			printf("INT");
-			break;
-		case NTWT_DOUBLE:
-			printf("DOUBLE");
-			break;
-		case NTWT_STRING:
-			printf("STRING");
-			break;
-		}
-		printf(" ");
-	}
-	printf("\n");
 }
 
 void
@@ -282,4 +248,38 @@ nnn_prog_type_check(struct nnn_prog *prog, int *error)
 				ntwt_type_name[expr->type]);
 		}
 	}
+}
+
+void
+nnn_prog_print(struct nnn_prog *prog)
+{
+	struct nnn_expr *expr = prog->expr;
+
+	foreach (expr) {
+		switch (expr->type) {
+		case NTWT_EOI:
+			printf("EOI");
+			break;
+		case NTWT_SEMI:
+			printf(";");
+			break;
+		case NTWT_OP_CODE:
+			printf("OP");
+			break;
+		case NTWT_UINT:
+			printf("UINT");
+			break;
+		case NTWT_INT:
+			printf("INT");
+			break;
+		case NTWT_DOUBLE:
+			printf("DOUBLE");
+			break;
+		case NTWT_STRING:
+			printf("STRING");
+			break;
+		}
+		printf(" ");
+	}
+	printf("\n");
 }
