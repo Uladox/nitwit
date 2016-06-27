@@ -23,7 +23,8 @@ static struct argp_option options[] = {
 
 
 /* Parse a single option. */
-static error_t parse_opt(int key, char *arg, struct argp_state *state)
+static error_t
+parse_opt(int key, char *arg, struct argp_state *state)
 {
 	/* Get the input argument from argp_parse, which we
 	 * know is a pointer to our arguments structure.
@@ -53,7 +54,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 /* Our argp parser. */
 static struct argp argp = { options, parse_opt, args_doc, doc };
 
-void ntwt_clnt_args_parse(int argc, char **argv, struct ntwt_clnt_opts *opts)
+void
+ntwt_clnt_args_parse(int argc, char **argv, struct ntwt_clnt_opts *opts)
 {
 	argp_parse(&argp, argc, argv, 0, 0, opts);
 }

@@ -27,4 +27,4 @@ struct nnn_expr {
 
 struct nnn_expr *
 nnn_expr_get(struct nnn_prog *prog, struct spar_lexinfo *info,
-	     struct spar_token *token, enum spar_parsed *error);
+	     struct spar_token *token, int *parsed);

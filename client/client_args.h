@@ -6,4 +6,5 @@ struct ntwt_clnt_opts {
 	char *output;
 };
 
-void ntwt_clnt_args_parse(int argc, char **argv, struct ntwt_clnt_opts *opts);
+void
+ntwt_clnt_args_parse(int argc, char **argv, struct ntwt_clnt_opts *opts);

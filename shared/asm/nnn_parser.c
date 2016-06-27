@@ -20,6 +20,28 @@ const enum ntwt_token nnn_uint    = NTWT_UINT;
 const enum ntwt_token nnn_double  = NTWT_DOUBLE;
 const enum ntwt_token nnn_string  = NTWT_STRING;
 
+/* Setting up sub-parsers using spar macros. */
+static SPAR_PARSE_FUNC(parse_op_code)
+{
+        SPAR_BODY_CUSWORD(&nnn_op_code, sizeof(char), SPAR_SEP_CASES, 0);
+}
+
+static SPAR_PARSE_FUNC(parse_strlit)
+{
+	SPAR_BODY_CUSSTRLIT(&nnn_string, 0);
+}
+
+static SPAR_PARSE_FUNC(parse_num)
+{
+	SPAR_BODY_CUSNUM(&nnn_uint, sizeof(uint32_t),
+			 &nnn_double, sizeof(double),
+			 SPAR_SEP_CASES, 0);
+}
+
+static SPAR_PARSER_INIT(op_code_parser, "parse_op_code", parse_op_code, NULL);
+static SPAR_PARSER_INIT(strlit_parser,  "parse_strlit",  parse_strlit,  NULL);
+static SPAR_PARSER_INIT(num_parser,     "parse_num",     parse_num,     NULL);
+
 /* Throw-away function to keep nnn_parse simple. */
 static inline void
 invalid_op_code(struct spar_lexinfo *info)
@@ -46,7 +68,7 @@ token_set_end(struct spar_token *token, struct spar_lexinfo *info)
 }
 
 /* What you came here for. */
-static enum spar_parsed
+static int
 nnn_parse(struct spar_parser *parser, struct spar_lexinfo *info,
 	  struct spar_token *token)
 {
@@ -54,54 +76,34 @@ nnn_parse(struct spar_parser *parser, struct spar_lexinfo *info,
 
 	if (*info->dat.text == '\0') {
 		token_set_end(token, info);
-		return SPAR_END;
+		return 1;
 	} else if (token->type.generic == &nnn_semi) {
 		spar_token_set_parser(token, &op_code_parser);
-		return SPAR_OK;
+		return 1;
 	}
 
 	switch (*info->dat.text) {
 	SPAR_DIGIT_CASES:
 		spar_token_set_parser(token, &num_parser);
-		return SPAR_OK;
+		return 1;
 	case '\"':
 		spar_token_set_parser(token, &strlit_parser);
-		return SPAR_OK;
+		return 1;
 	case '*':
 		spar_token_set_parser(token, &op_code_parser);
-		return SPAR_OK;
+		return 1;
 	case ';':
 		token_set_semi(token, info);
-		return SPAR_OK;
+		return 1;
 	default:
 		spar_parse(&op_code_parser, info, token);
 		invalid_op_code(info);
-		return SPAR_ERROR;
+		return 0;
 	}
 }
 
-/* Setting up sub-parsers using spar macros. */
-static SPAR_PARSE_FUNC(parse_op_code)
-{
-        SPAR_BODY_CUSWORD(&nnn_op_code, sizeof(char), SPAR_SEP_CASES, 0);
-}
 
-static SPAR_PARSE_FUNC(parse_strlit)
-{
-	SPAR_BODY_CUSSTRLIT(&nnn_string, 0);
-}
-
-static SPAR_PARSE_FUNC(parse_num)
-{
-	SPAR_BODY_CUSNUM(&nnn_uint, sizeof(uint32_t),
-			 &nnn_double, sizeof(double),
-			 SPAR_SEP_CASES, 0);
-}
-
-static SPAR_PARSER_INIT(op_code_parser, "parse_op_code", parse_op_code, NULL);
-static SPAR_PARSER_INIT(strlit_parser,  "parse_strlit",  parse_strlit,  NULL);
-static SPAR_PARSER_INIT(num_parser,     "parse_num",     parse_num,     NULL);
-static SPAR_PARSER_INIT(nnn_basic,      "nnn_basic",     nnn_parse,     NULL);
+static SPAR_PARSER_INIT(nnn_basic, "nnn_basic", nnn_parse, NULL);
 
 /* The full parser struct, ready for export! */
 SPAR_MOD_INIT_META(nnn_parser, &nnn_basic);

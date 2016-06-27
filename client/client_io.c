@@ -20,34 +20,37 @@
 #include "client_io.h"
 
 #ifdef ASSUME_UTF8
-void compile_and_send(const char *charset, struct nit_connection *sock,
-		      struct nnn_prog *prog, struct nnn_bcode *bcode)
+void
+compile_and_send(const char *charset, struct nit_connection *sock,
+		 struct nnn_prog *prog, struct nnn_bcode *bcode)
 {
-	int error = 0;
+	int parsed = 1;
 	uint32_t msg_len;
 
-	nnn_prog_get(prog, (uint8_t *) bcode->code, &error);
-	nnn_prog_type_check(prog, &error);
+	nnn_prog_get(prog, (uint8_t *) bcode->code, &parsed);
+	nnn_prog_type_check(prog, &parsed);
 
-	if (error)
+	if (!parsed)
 		return;
 
-	nnn_prog_bytecode(prog, bcode, &error);
+	nnn_prog_bytecode(prog, bcode, &parsed);
 	msg_len = bcode->size;
 
-	if (error)
+	if (!parsed)
 		return;
 
 	connection_send(sock, &msg_len, sizeof(msg_len));
 	connection_send(sock, bcode->code, msg_len);
 }
 
-void prompt(void)
+void
+prompt(void)
 {
 	printf(u8"📮⬅️");
 }
 
-void free_conversions(void)
+void
+free_conversions(void)
 {
 
 }
@@ -60,36 +63,39 @@ void free_conversions(void)
 static uint8_t *uni_buff;
 static size_t uni_size;
 
-void compile_and_send(const char *charset, struct nit_connection *sock,
-		      struct nnn_prog *prog, struct nnn_bcode *bcode)
+void
+compile_and_send(const char *charset, struct nit_connection *sock,
+		 struct nnn_prog *prog, struct nnn_bcode *bcode)
 {
-	int error = 0;
+	int parsed = 1;
 	uint32_t msg_len;
 
 	get_u8(charset, bcode->code, msg_len, &uni_buff, &uni_size);
 
-	nnn_prog_get(prog, (uint8_t *) uni_buff, &error);
-	nnn_prog_type_check(prog, &error);
+	nnn_prog_get(prog, (uint8_t *) uni_buff, &parsed);
+	nnn_prog_type_check(prog, &parsed);
 
-	if (error)
+	if (!parsed)
 		return;
 
-	nnn_prog_bytecode(prog, bcode, &error);
+	nnn_prog_bytecode(prog, bcode, &parsed);
 	msg_len = bcode->size;
 
-	if (error)
+	if (!parsed)
 		return;
 
 	connection_send(sock, &msg_len, sizeof(msg_len));
 	connection_send(sock, bcode->code, msg_len);
 }
 
-void prompt(void)
+void
+prompt(void)
 {
 	printf("* ");
 }
 
-void free_conversions(void)
+void
+free_conversions(void)
 {
 	free(uni_buff);
 }

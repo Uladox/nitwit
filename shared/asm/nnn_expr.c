@@ -25,16 +25,15 @@ nnn_prog_pop(struct nnn_prog *prog);
 
 static inline void
 nnn_set_op_code(struct nnn_prog *prog, struct nnn_expr *expr,
-		struct spar_token *token, enum spar_parsed *error)
+		struct spar_token *token, int *parsed)
 {
 	const char *result;
 
-	/* expr->type = NTWT_OP_CODE; */
 	prog->size += (expr->size = sizeof(expr->dat.op_code));
 	result = hashmap_get(&ntwt_op_map, token->dat.text, token->len);
 
 	if (!result) {
-		*error = SPAR_ERROR;
+		*parsed = 0;
 		fprintf(stderr, "Error: line %zu, invalid op code \"",
 			expr->line);
 		spar_fprint_text_token(token, stderr);
@@ -50,13 +49,12 @@ nnn_set_op_code(struct nnn_prog *prog, struct nnn_expr *expr,
 /* Fix this! */
 static inline void
 nnn_set_string(struct nnn_prog *prog, struct nnn_expr *expr,
-	       struct spar_token *token, enum spar_parsed *error)
+	       struct spar_token *token, int *parsed)
 {
-	/* expr->type = NTWT_STRING; */
 	prog->size += (expr->size = token->data_size);
 
-	if (spar_strlit_str(token, &expr->dat.string) == SPAR_ERROR) {
-		*error = SPAR_ERROR;
+	if (!spar_strlit_str(token, &expr->dat.string)) {
+		*parsed = 0;
 		fprintf(stderr,
 			"Error: on line %zu, invalid string ",
 			expr->line);
@@ -69,7 +67,6 @@ static inline void
 nnn_set_uint(struct nnn_prog *prog, struct nnn_expr *expr,
 	     struct spar_token *token)
 {
-	/* expr->type = NTWT_UINT; */
 	prog->size += (expr->size = sizeof(expr->dat.integer));
 	expr->dat.integer = strtoul(token->dat.text, NULL, 0);
 }
@@ -78,7 +75,6 @@ static inline void
 nnn_set_double(struct nnn_prog *prog, struct nnn_expr *expr,
 	       struct spar_token *token)
 {
-	/* expr->type = NTWT_DOUBLE; */
 	prog->size += (expr->size = sizeof(expr->dat.decimal));
 	expr->dat.integer = strtod(token->dat.text, NULL);
 }
@@ -86,12 +82,12 @@ nnn_set_double(struct nnn_prog *prog, struct nnn_expr *expr,
 
 struct nnn_expr *
 nnn_expr_get(struct nnn_prog *prog, struct spar_lexinfo *info,
-	     struct spar_token *token, enum spar_parsed *error)
+	     struct spar_token *token, int *parsed)
 {
 	struct nnn_expr *expr = nnn_prog_pop(prog);
 
-	if (spar_parse(&nnn_parser, info, token) == SPAR_ERROR) {
-		*error = SPAR_ERROR;
+	if (!spar_parse(&nnn_parser, info, token)) {
+		*parsed = 0;
 		fprintf(stderr, "Error: line %zu, %s.\n",
 			info->cue.text->error_line,
 			info->error.text);
@@ -102,10 +98,10 @@ nnn_expr_get(struct nnn_prog *prog, struct spar_lexinfo *info,
 
 	switch (expr->type = *token->type.enum_ptr) {
 	case NTWT_OP_CODE:
-		nnn_set_op_code(prog, expr, token, error);
+		nnn_set_op_code(prog, expr, token, parsed);
 		break;
 	case NTWT_STRING:
-	        nnn_set_string(prog, expr, token, error);
+	        nnn_set_string(prog, expr, token, parsed);
 		break;
 	case NTWT_UINT:
 		nnn_set_uint(prog, expr, token);
