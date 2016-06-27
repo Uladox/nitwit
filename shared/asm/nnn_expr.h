@@ -8,6 +8,7 @@
 
 struct nnn_prog {
 	size_t size;
+	int parsed;
 	struct nnn_expr *expr;
 	struct nnn_expr *stack;
 };
@@ -27,4 +28,4 @@ struct nnn_expr {
 
 struct nnn_expr *
 nnn_expr_get(struct nnn_prog *prog, struct spar_lexinfo *info,
-	     struct spar_token *token, int *parsed);
+	     struct spar_token *token);

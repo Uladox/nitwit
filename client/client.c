@@ -27,6 +27,16 @@
 #include "../shared/asm/nnn_prog.h"
 #include "client_io.h"
 
+char *logo = "\
++-----------------+\n\
+|NTWT client repl |   ECHO \"hello, world!\";\n\
+|~~~~~~~~~~~~~~~~~+-------------------------------+\n\
+|Using language: NNN (nitwit not natural)         |\n\
+| by Uladox                                       |\n\
+| /* TODO: make better logo here or something. */ |\n\
++-------------------------------------------------+\n\
+";
+
 static void
 repl(const char *charset, struct nnn_prog *prog)
 {
@@ -40,6 +50,8 @@ repl(const char *charset, struct nnn_prog *prog)
 
 	if (!sock)
 		return;
+
+	printf("%s", logo);
 
 	while (!connection_end_check(sock)) {
 		ssize_t tmp;
@@ -78,17 +90,15 @@ file_error(const char *filename)
 static void
 compile_out(FILE *out, struct nnn_prog *prog, struct nnn_bcode *bcode)
 {
-	int error = 0;
+	nnn_prog_get(prog, (uint8_t *) bcode->code);
+	nnn_prog_type_check(prog);
 
-	nnn_prog_get(prog, (uint8_t *) bcode->code, &error);
-	nnn_prog_type_check(prog, &error);
-
-	if (error)
+	if (!prog->parsed)
 		goto cleanup;
 
-	nnn_prog_bytecode(prog, bcode, &error);
+	nnn_prog_bytecode(prog, bcode);
 
-	if (error)
+	if (!prog->parsed)
 		goto cleanup;
 
 	fwrite(&(uint64_t) { htobe64(NTWT_FILE_MAGIC) },
@@ -101,7 +111,7 @@ cleanup:
 	free(bcode->code);
 	nnn_prog_empty(prog);
 
-	if (error)
+	if (!prog->parsed)
 		exit(EXIT_FAILURE);
 }
 

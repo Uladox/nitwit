@@ -10,6 +10,7 @@
 #define NNN_PROG_INIT(NAME)					\
 	struct nnn_prog NAME = {				\
 		.size = 0,					\
+		.parsed = 0,					\
 		.expr = NULL,					\
 		.stack = NULL					\
 	}
@@ -30,13 +31,13 @@ void
 nnn_prog_empty(struct nnn_prog *prog);
 
 void
-nnn_prog_get(struct nnn_prog *prog, uint8_t *code, int *parsed);
+nnn_prog_get(struct nnn_prog *prog, uint8_t *code);
 
 void
-nnn_prog_bytecode(struct nnn_prog *prog, struct nnn_bcode *bcode, int *parsed);
+nnn_prog_bytecode(struct nnn_prog *prog, struct nnn_bcode *bcode);
 
 void
-nnn_prog_type_check(struct nnn_prog *prog, int *parsed);
+nnn_prog_type_check(struct nnn_prog *prog);
 
 void
 nnn_prog_print(struct nnn_prog *prog);

@@ -24,19 +24,19 @@ void
 compile_and_send(const char *charset, struct nit_connection *sock,
 		 struct nnn_prog *prog, struct nnn_bcode *bcode)
 {
-	int parsed = 1;
+	/* int parsed = 1; */
 	uint32_t msg_len;
 
-	nnn_prog_get(prog, (uint8_t *) bcode->code, &parsed);
-	nnn_prog_type_check(prog, &parsed);
+	nnn_prog_get(prog, (uint8_t *) bcode->code);
+	nnn_prog_type_check(prog);
 
-	if (!parsed)
+	if (!prog->parsed)
 		return;
 
-	nnn_prog_bytecode(prog, bcode, &parsed);
+	nnn_prog_bytecode(prog, bcode);
 	msg_len = bcode->size;
 
-	if (!parsed)
+	if (!prog->parsed)
 		return;
 
 	connection_send(sock, &msg_len, sizeof(msg_len));

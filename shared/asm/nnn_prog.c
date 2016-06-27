@@ -100,48 +100,36 @@ extra_semi(struct nnn_expr *expr1, struct nnn_expr *expr2)
 
 static inline struct nnn_expr *
 first_expr(struct nnn_prog *prog, struct spar_lexinfo *info,
-	   struct spar_token *token, int *parsed)
+	   struct spar_token *token)
 {
-	struct nnn_expr *expr = nnn_expr_get(prog, info, token, parsed);
+	struct nnn_expr *expr = nnn_expr_get(prog, info, token);
 
 	while (expr->type != NTWT_EOI &&
 	       expr->dat.op_code == NTWT_OP_INVALID) {
 		bad_cmd_skip(info, token);
 		nnn_prog_push(prog, expr);
-	        expr = nnn_expr_get(prog, info, token, parsed);
+	        expr = nnn_expr_get(prog, info, token);
 	}
 
 	return expr;
 }
 
 void
-nnn_prog_get(struct nnn_prog *prog, uint8_t *code, int *parsed)
+nnn_prog_get(struct nnn_prog *prog, uint8_t *code)
 {
 	struct nnn_expr *expr;
 	struct nnn_expr *expr2;
 
-	struct spar_token token = {
-		.type.generic = &nnn_semi
-	};
-
-	struct spar_text_cue text_cue = {
-		.lines = 1
-	};
-
-	struct spar_lexinfo info = {
-		.dat.text = (char *) code,
-		.cue.text = &text_cue,
-		.error_leave = 0
-	};
-
-	/* SPAR_PARSER_STUFF_INIT(stuff, &nnn_parser, 0, &text_cue, */
-	/* 		       NULL, &nnn_semi, code); */
+	SPAR_TOKEN_INIT(token, &nnn_semi);
+	SPAR_TEXT_CUE_INIT(text_cue, 0);
+	SPAR_LEXINFO_INIT(info, 0, &text_cue, NULL, code);
 
 	nnn_prog_recycle(prog);
-	prog->expr = (expr = first_expr(prog, &info, &token, parsed));
+	prog->parsed = 1;
+	prog->expr = (expr = first_expr(prog, &info, &token));
 
 	while (expr->type != NTWT_EOI) {
-	        expr2 = nnn_expr_get(prog, &info, &token, parsed);
+	        expr2 = nnn_expr_get(prog, &info, &token);
 
 		if (is_bad_cmd(expr, expr2)) {
 			bad_cmd_skip(&info, &token);
@@ -156,7 +144,7 @@ nnn_prog_get(struct nnn_prog *prog, uint8_t *code, int *parsed)
 }
 
 void
-nnn_prog_bytecode(struct nnn_prog *prog, struct nnn_bcode *bcode, int *parsed)
+nnn_prog_bytecode(struct nnn_prog *prog, struct nnn_bcode *bcode)
 {
 	bcode->size = prog->size;
 
@@ -187,7 +175,7 @@ nnn_prog_bytecode(struct nnn_prog *prog, struct nnn_bcode *bcode, int *parsed)
 }
 
 void
-nnn_prog_type_check(struct nnn_prog *prog, int *parsed)
+nnn_prog_type_check(struct nnn_prog *prog)
 {
 	struct nnn_expr *expr = prog->expr;
 	int args = -1;
@@ -202,7 +190,7 @@ nnn_prog_type_check(struct nnn_prog *prog, int *parsed)
 
 		if (expr->type == NTWT_SEMI) {
 			if (args < params[0]) {
-				*parsed = 0;
+				prog->parsed = 0;
 				fprintf(stderr,
 					"Error: too few arguments to %s on "
 					"line %zu, expected %u, got %u\n",
@@ -224,7 +212,7 @@ nnn_prog_type_check(struct nnn_prog *prog, int *parsed)
 
 
 		if (args > params[0]) {
-			*parsed = 0;
+			prog->parsed = 0;
 
 			expr = LIST_NEXT(expr);
 			foreach (expr) {
@@ -243,7 +231,7 @@ nnn_prog_type_check(struct nnn_prog *prog, int *parsed)
 		}
 
 		if (params[args] != expr->type) {
-			*parsed = 0;
+			prog->parsed = 0;
 			fprintf(stderr,
 				"Error: on line %zu expected type %s, got %s.\n",
 				expr->line, ntwt_type_name[params[args]],
